@@ -1,0 +1,10 @@
+.checkin-result .button-primary { margin-top: .25rem; }
+.checkin-result .registration-lookup__field { display: grid; gap: .5rem; margin: 1.2rem 0; }
+.checkin-result .registration-lookup__field span { color: #9badc3; font-family: var(--font-mono); font-size: .61rem; letter-spacing: .11em; text-transform: uppercase; }
+.checkin-result .registration-lookup__field input { width: 100%; height: 46px; border: 1px solid rgba(177, 201, 233, .22); background: rgba(2, 6, 12, .78); color: #fff; padding: 0 .8rem; outline: none; font-family: var(--font-mono); font-size: .76rem; letter-spacing: .07em; }
+.checkin-result .registration-lookup__field input:focus { border-color: #ec3440; box-shadow: 0 0 0 3px rgba(236, 52, 64, .12); }
+.checkin-result .registration-lookup__field input:disabled { cursor: not-allowed; opacity: .55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scanner-viewport video { transform: none !important; }
+}
