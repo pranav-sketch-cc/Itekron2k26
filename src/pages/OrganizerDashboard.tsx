@@ -3,7 +3,8 @@ import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 import { Registration, Participant } from '../types/database';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ShieldAlert, CheckCircle2, QrCode, Search, LogOut, Check, Users, User } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, QrCode, Search, LogOut, Check, Users, Camera, X } from 'lucide-react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 export const OrganizerDashboard: React.FC = () => {
   const [, setLocation] = useLocation();
@@ -15,9 +16,51 @@ export const OrganizerDashboard: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
 
+  // Camera Scanner Modal State
+  const [showScanner, setShowScanner] = useState(false);
+
   useEffect(() => {
     verifyOrganizerRole();
   }, []);
+
+  useEffect(() => {
+    let scanner: Html5QrcodeScanner | null = null;
+
+    if (showScanner) {
+      // Initialize HTML5 QR Code Scanner when modal opens
+      scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        /* verbose= */ false
+      );
+
+      scanner.render(
+        (decodedText) => {
+          // Clean up scanned text (handles raw ID or full URL if encoded in QR)
+          let cleanText = decodedText.trim();
+          if (cleanText.includes('/pass/')) {
+            cleanText = cleanText.split('/pass/').pop() || cleanText;
+          }
+
+          setSearchId(cleanText);
+          setShowScanner(false);
+          scanner?.clear();
+
+          // Auto-execute search query with scanned ID
+          executeSearchPass(cleanText);
+        },
+        (errorMessage) => {
+          // Camera scan error (silent ignore during frame processing)
+        }
+      );
+    }
+
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(() => {});
+      }
+    };
+  }, [showScanner]);
 
   const verifyOrganizerRole = async () => {
     setLoading(true);
@@ -34,7 +77,9 @@ export const OrganizerDashboard: React.FC = () => {
       .eq('id', session.user.id)
       .maybeSingle();
 
-    if (!profile || profile.role !== 'organizer') {
+    const userRole = (profile?.role || '').toLowerCase();
+
+    if (!profile || userRole !== 'organizer') {
       setAuthorized(false);
       setLoading(false);
       return;
@@ -44,15 +89,14 @@ export const OrganizerDashboard: React.FC = () => {
     setLoading(false);
   };
 
-  const handleSearchPass = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchId.trim()) return;
+  const executeSearchPass = async (idToSearch: string) => {
+    if (!idToSearch.trim()) return;
 
     setStatusMessage(null);
     setActiveReg(null);
     setActiveParticipants([]);
 
-    const cleanId = searchId.trim().toUpperCase();
+    const cleanId = idToSearch.trim().toUpperCase();
 
     // Query registration row
     const { data: reg, error: regErr } = await supabase
@@ -65,7 +109,7 @@ export const OrganizerDashboard: React.FC = () => {
       .maybeSingle();
 
     if (regErr || !reg) {
-      setStatusMessage({ type: 'error', text: `Pass ID '${cleanId}' not found.` });
+      setStatusMessage({ type: 'error', text: `Pass ID '${cleanId}' not found in database.` });
       return;
     }
 
@@ -80,6 +124,11 @@ export const OrganizerDashboard: React.FC = () => {
     if (parts) {
       setActiveParticipants(parts);
     }
+  };
+
+  const handleManualSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    executeSearchPass(searchId);
   };
 
   const handleConfirmCheckIn = async () => {
@@ -159,14 +208,24 @@ export const OrganizerDashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Search Bar / Scanner Input */}
+      {/* Lookup Bar & Scanner Trigger */}
       <div className="spider-card p-6 rounded-3xl space-y-4">
-        <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-          <QrCode className="w-4 h-4 text-red-400" />
-          <span>Lookup Digital Pass ID</span>
-        </h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+            <QrCode className="w-4 h-4 text-red-400" />
+            <span>Lookup Digital Pass</span>
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowScanner(true)}
+            className="spider-button-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5"
+          >
+            <Camera className="w-4 h-4" />
+            <span>Scan QR Code</span>
+          </button>
+        </div>
 
-        <form onSubmit={handleSearchPass} className="flex gap-2">
+        <form onSubmit={handleManualSearch} className="flex gap-2">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
             <input
@@ -174,15 +233,15 @@ export const OrganizerDashboard: React.FC = () => {
               required
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
-              placeholder="Enter or scan Pass ID (e.g. ITK-2K26-XXXX)"
+              placeholder="Enter or paste Pass ID (e.g. ITK-2K26-XXXX)"
               className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
             />
           </div>
           <button
             type="submit"
-            className="spider-button-primary px-6 py-2.5 rounded-xl text-xs font-bold"
+            className="spider-button-secondary px-6 py-2.5 rounded-xl text-xs font-bold text-white"
           >
-            Verify
+            Search
           </button>
         </form>
 
@@ -195,6 +254,32 @@ export const OrganizerDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* CAMERA SCANNER MODAL */}
+      {showScanner && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-md w-full space-y-4 text-center relative">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+                <Camera className="w-4 h-4 text-red-400" />
+                <span>Scan Participant Pass</span>
+              </h3>
+              <button
+                onClick={() => setShowScanner(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div id="qr-reader" className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950"></div>
+
+            <p className="text-[10px] text-slate-400">
+              Point your camera at the QR code displayed on the participant's Digital Pass.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Active Pass Record Details */}
       {activeReg && (
