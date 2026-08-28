@@ -1,64 +1,50 @@
-// I-TEKRON 2K26 — "Tension in the Skyline": dark cinematic shell for the Phase 1 hero.
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Events from "./pages/Events";
-import EventDetail from "./pages/EventDetail";
-import Schedule from "./pages/Schedule";
-import Sponsors from "./pages/Sponsors";
-import FAQ from "./pages/FAQ";
-import Contact from "./pages/Contact";
-import Register from "./pages/Register";
-import RegistrationStatus from "./pages/RegistrationStatus";
-import DigitalPass from "./pages/DigitalPass";
-import OrganizerCheckin from "./pages/OrganizerCheckin";
-import OrganizerDashboard from "./pages/OrganizerDashboard";
-import MyPasses from "./pages/MyPasses";
-import { Login, SignUp, SupabaseConfirmationCallback } from "./pages/ParticipantAuth";
-import { AuthProvider } from "./contexts/AuthContext";
-function Router() {
-  // make sure to consider if you need authentication for certain routes
+import React from 'react';
+import { Route, Switch } from 'wouter';
+import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
+import { Home } from './pages/Home';
+import { About } from './pages/About';
+import { Events } from './pages/Events';
+import { EventDetail } from './pages/EventDetail';
+import { RegisterEvent } from './pages/RegisterEvent';
+import { Schedule } from './pages/Schedule';
+import { Sponsors } from './pages/Sponsors';
+import { Login } from './pages/Login';
+import { SignUp } from './pages/SignUp';
+import { AuthCallback } from './pages/AuthCallback';
+import { MyRegistrations } from './pages/MyRegistrations';
+import { DigitalPass } from './pages/DigitalPass';
+import { OrganizerLogin } from './pages/OrganizerLogin';
+import { OrganizerDashboard } from './pages/OrganizerDashboard';
+
+export default function App() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/about" component={About} />
-      <Route path="/events/:eventId" component={EventDetail} />
-      <Route path="/events" component={Events} />
-      <Route path="/schedule" component={Schedule} />
-      <Route path="/sponsors" component={Sponsors} />
-      <Route path="/faq" component={FAQ} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/register" component={Register} />
-      <Route path="/registration-status" component={RegistrationStatus} />
-      <Route path="/digital-pass" component={DigitalPass} />
-      <Route path="/login" component={Login} />
-      <Route path="/signup" component={SignUp} />
-      <Route path="/auth/callback" component={SupabaseConfirmationCallback} />
-      <Route path="/my-passes" component={MyPasses} />
-      <Route path="/organizer-checkin" component={OrganizerCheckin} />
-      <Route path="/organizer-dashboard" component={OrganizerDashboard} />
-      <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-red-500 selection:text-white">
+      <Navbar />
+      <main className="flex-1">
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/about" component={About} />
+          <Route path="/events" component={Events} />
+          <Route path="/events/:id" component={EventDetail} />
+          <Route path="/events/:id/register" component={RegisterEvent} />
+          <Route path="/schedule" component={Schedule} />
+          <Route path="/sponsors" component={Sponsors} />
+          <Route path="/login" component={Login} />
+          <Route path="/signup" component={SignUp} />
+          <Route path="/auth/callback" component={AuthCallback} />
+          <Route path="/my-registrations" component={MyRegistrations} />
+          <Route path="/pass/:registrationId" component={DigitalPass} />
+          <Route path="/organizer/login" component={OrganizerLogin} />
+          <Route path="/organizer" component={OrganizerDashboard} />
+          <Route>
+            <div className="min-h-screen pt-32 text-center text-slate-400 text-sm">
+              404 — Page Not Found
+            </div>
+          </Route>
+        </Switch>
+      </main>
+      <Footer />
+    </div>
   );
 }
-
-function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
-        <AuthProvider><TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider></AuthProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
-}
-
-export default App;
