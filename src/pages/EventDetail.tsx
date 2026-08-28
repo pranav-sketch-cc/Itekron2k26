@@ -31,16 +31,12 @@ export const EventDetail: React.FC = () => {
     setError(null);
 
     try {
-      const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
-
-      let query = supabase.from('events').select('*');
-      if (isUuid) {
-        query = query.eq('id', id);
-      } else {
-        query = query.eq('slug', id);
-      }
-
-      const { data, error: fetchError } = await query.maybeSingle();
+      // Query existing public.events table strictly using existing primary key 'id'
+      const { data, error: fetchError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
 
       if (fetchError) {
         throw new Error(fetchError.message);

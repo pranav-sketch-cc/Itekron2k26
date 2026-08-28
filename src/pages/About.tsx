@@ -84,7 +84,7 @@ export const About: React.FC = () => {
           </p>
           <div className="space-y-2 text-xs text-slate-400 pt-2">
             <div className="flex items-center space-x-2">
-              <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />  
               <span>Department of IT, Engineering Campus, Main Auditorium</span>
             </div>
             <div className="flex items-center space-x-2">
