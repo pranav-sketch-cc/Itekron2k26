@@ -16,9 +16,11 @@ export const OrganizerLogin: React.FC = () => {
     setLoading(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+
       // 1. Authenticate with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
@@ -26,14 +28,16 @@ export const OrganizerLogin: React.FC = () => {
         throw new Error(authError?.message || 'Invalid email or password.');
       }
 
-      // 2. Verify server-side role in public.profiles
+      // 2. Fetch role from profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
         .maybeSingle();
 
-      if (profileError || !profile || profile.role !== 'organizer') {
+      const userRole = (profile?.role || '').toLowerCase();
+
+      if (profileError || userRole !== 'organizer') {
         // Sign out unauthorized user session
         await supabase.auth.signOut();
         throw new Error('Access Denied: This account does not have organizer permissions.');
