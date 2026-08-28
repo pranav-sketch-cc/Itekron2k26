@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -8,21 +8,25 @@ export const AuthCallback: React.FC = () => {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const exchangeAttempted = useRef<boolean>(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      // 1. Check for error parameters in URL query/hash
+      // Prevent React StrictMode duplicate execution
+      if (exchangeAttempted.current) return;
+      exchangeAttempted.current = true;
+
       const params = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
+      // 1. Check for error parameters in URL query/hash
       const errorDescription = params.get('error_description') || hashParams.get('error_description');
-      
       if (errorDescription) {
         setError(decodeURIComponent(errorDescription));
         return;
       }
 
-      // 2. Exchange authorization code if present (PKCE flow)
+      // 2. Handle PKCE Code Exchange Flow (code in query string)
       const code = params.get('code');
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -30,18 +34,26 @@ export const AuthCallback: React.FC = () => {
           setError(exchangeError.message);
           return;
         }
+        setSuccess(true);
+        setTimeout(() => setLocation('/my-registrations'), 1500);
+        return;
       }
 
-      // 3. Verify session establishment
+      // 3. Fallback: Check existing session or implicit hash token
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      if (sessionError || !session) {
-        // If hash parameters exist, wait brief instant for Supabase auth listener to settle
+      if (session) {
+        setSuccess(true);
+        setTimeout(() => setLocation('/my-registrations'), 1500);
+      } else if (sessionError) {
+        setError(sessionError.message);
+      } else {
+        // If hash parameters exist, subscribe briefly for session state change
         if (window.location.hash.includes('access_token')) {
           const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
             if (newSession) {
               setSuccess(true);
-              setTimeout(() => setLocation('/events'), 1500);
+              setTimeout(() => setLocation('/my-registrations'), 1500);
             }
           });
 
@@ -50,7 +62,7 @@ export const AuthCallback: React.FC = () => {
             supabase.auth.getSession().then(({ data }) => {
               if (data.session) {
                 setSuccess(true);
-                setTimeout(() => setLocation('/events'), 1500);
+                setTimeout(() => setLocation('/my-registrations'), 1500);
               } else {
                 setError('Verification link expired or session could not be established.');
               }
@@ -59,9 +71,6 @@ export const AuthCallback: React.FC = () => {
         } else {
           setError('Invalid or missing verification parameters.');
         }
-      } else {
-        setSuccess(true);
-        setTimeout(() => setLocation('/events'), 1500);
       }
     };
 
@@ -93,7 +102,7 @@ export const AuthCallback: React.FC = () => {
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto animate-bounce" />
             <h2 className="text-xl font-bold text-white">Account Verified!</h2>
             <p className="text-xs text-slate-300">
-              Your email has been confirmed. Redirecting to events schedule...
+              Your email has been confirmed. Redirecting to your registrations...
             </p>
           </div>
         ) : (
