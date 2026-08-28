@@ -78,19 +78,28 @@ export const Events: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => {
-            const parsedTeamSize = Number(event.team_size) || 1;
-            const isTeam = event.team_type === 'team' || parsedTeamSize > 1;
+            const rawType = (event.event_type || event.team_type || '').toLowerCase();
+            const numericTeamSize = Number(event.max_team_size || event.team_size || 1);
+
+            let typeLabel = 'Individual';
+            if (rawType === 'both') {
+              typeLabel = 'Individual & Team';
+            } else if (rawType === 'team' || numericTeamSize > 1) {
+              typeLabel = `Team (${numericTeamSize})`;
+            } else if (rawType === 'individual') {
+              typeLabel = 'Individual';
+            }
 
             return (
               <div key={event.id} className="spider-card p-6 rounded-3xl flex flex-col justify-between border-slate-800 space-y-5">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-[10px]">
                     <span className="font-bold uppercase tracking-wider text-red-400 bg-red-950/60 px-2.5 py-1 rounded-full border border-red-900/40">
-                      {event.category}
+                      {event.category || 'Symposium'}
                     </span>
-                    <span className="text-slate-400 flex items-center space-x-1">
+                    <span className="text-slate-300 flex items-center space-x-1 font-semibold bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800">
                       <Users className="w-3 h-3 text-blue-400" />
-                      <span>{isTeam ? `Team (${event.team_size})` : 'Individual'}</span>
+                      <span>{typeLabel}</span>
                     </span>
                   </div>
 
