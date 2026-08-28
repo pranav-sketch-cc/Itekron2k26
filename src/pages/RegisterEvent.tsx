@@ -143,17 +143,18 @@ export const RegisterEvent: React.FC = () => {
         throw new Error('You are already registered for this event.');
       }
 
-      // 2. Insert primary record into public.registrations
+      // 2. Insert primary record into public.registrations WITHOUT team_name
+      const registrationPayload: Record<string, any> = {
+        registration_id: customRegId,
+        event_id: event.id,
+        user_id: user.id,
+        registration_type: isTeamMode ? 'team' : 'individual',
+        status: 'confirmed',
+      };
+
       const { data: regData, error: regError } = await supabase
         .from('registrations')
-        .insert({
-          registration_id: customRegId,
-          event_id: event.id,
-          user_id: user.id,
-          registration_type: isTeamMode ? 'team' : 'individual',
-          team_name: isTeamMode ? teamName : null,
-          status: 'confirmed',
-        })
+        .insert(registrationPayload)
         .select()
         .single();
 
@@ -185,7 +186,7 @@ export const RegisterEvent: React.FC = () => {
           name: m.name,
           email: m.email,
           phone: m.phone,
-          college: indCollege || teamName + ' Institutional Representative',
+          college: indCollege || (teamName ? `${teamName} Representative` : 'College Representative'),
           department: m.department,
           year: m.year,
           student_id: m.student_id,
