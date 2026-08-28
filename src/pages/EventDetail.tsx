@@ -31,7 +31,6 @@ export const EventDetail: React.FC = () => {
     setError(null);
 
     try {
-      // Query existing public.events table strictly using existing primary key 'id'
       const { data, error: fetchError } = await supabase
         .from('events')
         .select('*')
@@ -102,8 +101,20 @@ export const EventDetail: React.FC = () => {
     );
   }
 
-  const parsedTeamSize = Number(event.team_size) || 1;
-  const isTeam = event.team_type === 'team' || parsedTeamSize > 1;
+  // Determine actual participation type from Supabase columns (event_type or team_type)
+  const rawType = (event.event_type || event.team_type || '').toLowerCase();
+  const numericTeamSize = Number(event.max_team_size || event.team_size || 1);
+
+  let typeLabel = 'Individual';
+  if (rawType === 'both') {
+    typeLabel = `Individual & Team (Up to ${numericTeamSize} members)`;
+  } else if (rawType === 'team' || numericTeamSize > 1) {
+    typeLabel = `Team Event (${numericTeamSize} members)`;
+  } else if (rawType === 'individual') {
+    typeLabel = 'Individual Competition';
+  } else {
+    typeLabel = 'Registration type unavailable';
+  }
 
   // Safely parse rules_regulations regardless of database format (Array, String, or Null)
   const rulesList: string[] = (() => {
@@ -113,9 +124,7 @@ export const EventDetail: React.FC = () => {
       try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) return parsed;
-      } catch (_) {
-        // Explicit string fallback parsing
-      }
+      } catch (_) {}
       return (raw as string).split(/\n|,/).map((r) => r.trim()).filter(Boolean);
     }
     return [];
@@ -134,11 +143,11 @@ export const EventDetail: React.FC = () => {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-red-400 bg-red-950/60 border border-red-900/50 px-3 py-1 rounded-full">
-              {event.category}
+              {event.category || 'Symposium'}
             </span>
             <span className="text-[10px] text-slate-300 flex items-center space-x-1 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
               <Users className="w-3.5 h-3.5 text-blue-400" />
-              <span>{isTeam ? `Team Event (${event.team_size} members)` : 'Individual Competition'}</span>
+              <span>{typeLabel}</span>
             </span>
           </div>
 
