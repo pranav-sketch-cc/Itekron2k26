@@ -1,228 +1,253 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 import { supabase } from '../lib/supabase';
-import { Registration } from '../types/database';
-import { useAuth } from '../contexts/AuthContext';
-import { StatusBadge } from '../components/StatusBadge';
-import { Search, Camera, CheckCircle2, ShieldAlert, UserCheck, RefreshCw } from 'lucide-react';
-import { formatDate } from '../lib/utils';
+import { Registration, Participant } from '../types/database';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ShieldAlert, CheckCircle2, QrCode, Search, LogOut, Check, Users, User } from 'lucide-react';
 
 export const OrganizerDashboard: React.FC = () => {
-  const { user } = useAuth();
   const [, setLocation] = useLocation();
-
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
   const [searchId, setSearchId] = useState('');
-  const [registration, setRegistration] = useState<Registration | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [activeReg, setActiveReg] = useState<Registration | null>(null);
+  const [activeParticipants, setActiveParticipants] = useState<Participant[]>([]);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [scannerActive, setScannerActive] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      setLocation('/organizer/login');
-    }
-  }, [user]);
+    verifyOrganizerRole();
+  }, []);
 
-  // Handle camera scanner initialization
-  useEffect(() => {
-    let scanner: Html5QrcodeScanner | null = null;
-
-    if (scannerActive) {
-      scanner = new Html5QrcodeScanner(
-        'qr-reader',
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        /* verbose= */ false
-      );
-
-      scanner.render(
-        (decodedText) => {
-          verifyRegistration(decodedText.trim());
-          setScannerActive(false);
-          scanner?.clear();
-        },
-        () => {}
-      );
-    }
-
-    return () => {
-      if (scanner) {
-        scanner.clear().catch(() => {});
-      }
-    };
-  }, [scannerActive]);
-
-  const verifyRegistration = async (regCustomId: string) => {
+  const verifyOrganizerRole = async () => {
     setLoading(true);
-    setError(null);
-    setRegistration(null);
+    const { data: { session } } = await supabase.auth.getSession();
 
-    const { data, error } = await supabase
-      .from('registrations')
-      .select(`
-        *,
-        events (*),
-        participants (*),
-        teams (*, team_members (*))
-      `)
-      .eq('registration_id', regCustomId.toUpperCase())
+    if (!session) {
+      setLocation('/organizer/login');
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
       .maybeSingle();
 
-    if (error || !data) {
-      setError(`No registration record found for ID: "${regCustomId}"`);
-    } else {
-      setRegistration(data);
+    if (!profile || profile.role !== 'organizer') {
+      setAuthorized(false);
+      setLoading(false);
+      return;
     }
+
+    setAuthorized(true);
     setLoading(false);
   };
 
-  const handleManualSearch = (e: React.FormEvent) => {
+  const handleSearchPass = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchId.trim()) {
-      verifyRegistration(searchId.trim());
+    if (!searchId.trim()) return;
+
+    setStatusMessage(null);
+    setActiveReg(null);
+    setActiveParticipants([]);
+
+    const cleanId = searchId.trim().toUpperCase();
+
+    // Query registration row
+    const { data: reg, error: regErr } = await supabase
+      .from('registrations')
+      .select(`
+        *,
+        events (*)
+      `)
+      .eq('registration_id', cleanId)
+      .maybeSingle();
+
+    if (regErr || !reg) {
+      setStatusMessage({ type: 'error', text: `Pass ID '${cleanId}' not found.` });
+      return;
+    }
+
+    setActiveReg(reg as any);
+
+    // Fetch participant delegate list
+    const { data: parts } = await supabase
+      .from('participants')
+      .select('*')
+      .eq('registration_id', cleanId);
+
+    if (parts) {
+      setActiveParticipants(parts);
     }
   };
 
   const handleConfirmCheckIn = async () => {
-    if (!registration || !user) return;
+    if (!activeReg) return;
 
     setCheckingIn(true);
-    const now = new Date().toISOString();
+    setStatusMessage(null);
 
-    const { error: updateError } = await supabase
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const { error: updateErr } = await supabase
       .from('registrations')
       .update({
-        checked_in_at: now,
-        checked_in_by: user.email,
+        checked_in: true,
+        checked_in_at: new Date().toISOString(),
+        checked_in_by: session?.user.id,
       })
-      .eq('id', registration.id);
+      .eq('registration_id', activeReg.registration_id);
 
     setCheckingIn(false);
 
-    if (updateError) {
-      setError('Check-in failed. Please try again.');
+    if (updateErr) {
+      setStatusMessage({ type: 'error', text: 'Failed to update check-in status: ' + updateErr.message });
     } else {
-      // Refresh local registration state
-      setRegistration({
-        ...registration,
-        checked_in_at: now,
-        checked_in_by: user.email || 'Organizer',
-      });
+      setActiveReg({ ...activeReg, checked_in: true });
+      setStatusMessage({ type: 'success', text: `Successfully checked in Pass ${activeReg.registration_id}!` });
     }
   };
 
-  return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest bg-blue-950/60 px-3 py-1 rounded-full border border-blue-900/40">
-          Organizer Portal
-        </span>
-        <h1 className="text-3xl font-extrabold text-white">Entry Verification</h1>
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setLocation('/organizer/login');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-28 flex items-center justify-center">
+        <LoadingSpinner message="Verifying organizer session..." />
       </div>
+    );
+  }
 
-      {/* Verification Inputs */}
-      <div className="spider-card p-6 rounded-3xl space-y-6">
-        {/* Search & Scanner Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <form onSubmit={handleManualSearch} className="flex-1 flex gap-2">
-            <input
-              type="text"
-              value={searchId}
-              onChange={(e) => setSearchId(e.target.value)}
-              placeholder="Enter Registration ID (e.g. ITK-8F2A)"
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 uppercase font-mono"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="spider-button-secondary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1"
-            >
-              <Search className="w-4 h-4" />
-              <span>Verify</span>
-            </button>
-          </form>
-
+  if (!authorized) {
+    return (
+      <div className="min-h-screen pt-28 px-4 text-center">
+        <div className="spider-card max-w-md mx-auto p-8 rounded-3xl space-y-4">
+          <ShieldAlert className="w-12 h-12 text-red-500 mx-auto" />
+          <h2 className="text-xl font-bold text-white">Unauthorized Access</h2>
+          <p className="text-xs text-slate-300">You must be logged in with an organizer account to access this dashboard.</p>
           <button
-            onClick={() => setScannerActive(!scannerActive)}
-            className="spider-button-primary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-2"
+            onClick={() => setLocation('/organizer/login')}
+            className="spider-button-primary px-6 py-2.5 rounded-full text-xs font-bold"
           >
-            <Camera className="w-4 h-4" />
-            <span>{scannerActive ? 'Close Scanner' : 'Scan QR'}</span>
+            Go to Organizer Login
           </button>
         </div>
+      </div>
+    );
+  }
 
-        {/* Camera Container */}
-        {scannerActive && (
-          <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
-            <div id="qr-reader" className="w-full text-slate-300" />
+  return (
+    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-8">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 p-6 rounded-3xl border border-slate-800">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-red-400 bg-red-950/60 px-3 py-1 rounded-full border border-red-900/50">
+            Desk Organizer
+          </span>
+          <h1 className="text-2xl font-black text-white mt-1">Verification Desk</h1>
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-950 border border-slate-800 text-slate-300 hover:text-white"
+        >
+          <LogOut className="w-4 h-4 text-red-400" />
+          <span>Sign Out</span>
+        </button>
+      </div>
+
+      {/* Search Bar / Scanner Input */}
+      <div className="spider-card p-6 rounded-3xl space-y-4">
+        <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+          <QrCode className="w-4 h-4 text-red-400" />
+          <span>Lookup Digital Pass ID</span>
+        </h2>
+
+        <form onSubmit={handleSearchPass} className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              required
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              placeholder="Enter or scan Pass ID (e.g. ITK-2K26-XXXX)"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="spider-button-primary px-6 py-2.5 rounded-xl text-xs font-bold"
+          >
+            Verify
+          </button>
+        </form>
+
+        {statusMessage && (
+          <div className={`p-4 rounded-2xl flex items-center space-x-2 text-xs ${
+            statusMessage.type === 'success' ? 'bg-emerald-950/80 border border-emerald-800 text-emerald-300' : 'bg-red-950/80 border border-red-800 text-red-300'
+          }`}>
+            {statusMessage.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : <ShieldAlert className="w-5 h-5 text-red-400 flex-shrink-0" />}
+            <span>{statusMessage.text}</span>
           </div>
         )}
       </div>
 
-      {/* Verification Result */}
-      {loading && (
-        <div className="spider-card p-8 rounded-2xl text-center text-slate-400 text-sm">
-          Searching registration records...
-        </div>
-      )}
-
-      {error && (
-        <div className="p-4 bg-red-950/80 border border-red-800 rounded-2xl flex items-center space-x-3 text-red-300 text-xs">
-          <ShieldAlert className="w-5 h-5 flex-shrink-0 text-red-400" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {registration && !loading && (
-        <div className="spider-card p-6 sm:p-8 rounded-3xl space-y-6 border-blue-500/40">
+      {/* Active Pass Record Details */}
+      {activeReg && (
+        <div className="spider-card p-6 sm:p-8 rounded-3xl space-y-6 border-red-900/40">
           <div className="flex justify-between items-start border-b border-slate-800 pb-4">
             <div>
-              <span className="text-xs font-mono font-bold text-red-400 bg-slate-900 px-2.5 py-1 rounded-md border border-slate-800">
-                {registration.registration_id}
-              </span>
-              <h2 className="text-2xl font-extrabold text-white mt-2">
-                {registration.events?.name}
-              </h2>
+              <span className="text-[10px] font-mono font-bold text-red-400">{activeReg.registration_id}</span>
+              <h2 className="text-xl font-bold text-white">{activeReg.events?.name}</h2>
+              <p className="text-xs text-slate-400">Venue: {activeReg.events?.venue || 'TBA'}</p>
             </div>
-            <StatusBadge status={registration.checked_in_at ? 'checked_in' : 'confirmed'} type="checkin" />
+            <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+              activeReg.checked_in ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'
+            }`}>
+              {activeReg.checked_in ? 'Already Checked In' : 'Pending Check-In'}
+            </span>
           </div>
 
-          {/* Participant Info */}
-          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-xs space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Participant / Team:</span>
-              <span className="font-bold text-white">
-                {registration.registration_type === 'team'
-                  ? registration.teams?.[0]?.team_name
-                  : registration.participants?.[0]?.name}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Email:</span>
-              <span className="text-slate-300">{registration.participant_email}</span>
+          {/* Delegate List */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
+              <Users className="w-4 h-4 text-blue-400" />
+              <span>Registered Delegate(s)</span>
+            </h3>
+
+            <div className="space-y-2">
+              {activeParticipants.map((part, idx) => (
+                <div key={idx} className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 text-xs flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-white">{part.name}</p>
+                    <p className="text-[10px] text-slate-400">{part.email} • {part.phone}</p>
+                  </div>
+                  <span className="text-[10px] text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+                    {part.college || 'Participant'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Check-In Action Section */}
+          {/* Confirm Check-in Button */}
           <div className="pt-2">
-            {registration.checked_in_at ? (
-              <div className="p-4 bg-emerald-950/80 border border-emerald-800/80 rounded-2xl text-center text-emerald-400 text-xs space-y-1">
-                <CheckCircle2 className="w-6 h-6 mx-auto mb-1 text-emerald-400" />
-                <p className="font-bold">Already Checked In</p>
-                <p className="text-[11px] text-emerald-500">
-                  Timestamp: {formatDate(registration.checked_in_at)} by {registration.checked_in_by || 'Organizer'}
-                </p>
+            {activeReg.checked_in ? (
+              <div className="p-4 bg-emerald-950/40 border border-emerald-800/60 rounded-2xl text-center text-emerald-400 text-xs font-bold flex items-center justify-center space-x-2">
+                <Check className="w-5 h-5" />
+                <span>Delegate Entry Validated</span>
               </div>
             ) : (
               <button
                 onClick={handleConfirmCheckIn}
                 disabled={checkingIn}
-                className="w-full spider-button-primary py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center space-x-2 transition disabled:opacity-50"
+                className="w-full spider-button-primary py-3.5 rounded-2xl text-xs font-bold disabled:opacity-50"
               >
-                <UserCheck className="w-5 h-5" />
-                <span>{checkingIn ? 'Updating Check-In...' : 'Confirm Check-In'}</span>
+                {checkingIn ? 'Processing...' : 'Confirm Participant Check-In'}
               </button>
             )}
           </div>
@@ -231,3 +256,5 @@ export const OrganizerDashboard: React.FC = () => {
     </div>
   );
 };
+
+export default OrganizerDashboard;
