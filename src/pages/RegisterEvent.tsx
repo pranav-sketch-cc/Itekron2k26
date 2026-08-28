@@ -143,18 +143,17 @@ export const RegisterEvent: React.FC = () => {
         throw new Error('You are already registered for this event.');
       }
 
-      // 2. Insert primary record into public.registrations WITHOUT team_name
-      const registrationPayload: Record<string, any> = {
-        registration_id: customRegId,
-        event_id: event.id,
-        user_id: user.id,
-        registration_type: isTeamMode ? 'team' : 'individual',
-        status: 'confirmed',
-      };
-
+      // 2. Insert primary record into public.registrations
       const { data: regData, error: regError } = await supabase
         .from('registrations')
-        .insert(registrationPayload)
+        .insert({
+          registration_id: customRegId,
+          event_id: event.id,
+          user_id: user.id,
+          registration_type: isTeamMode ? 'team' : 'individual',
+          team_name: isTeamMode ? teamName : null,
+          status: 'confirmed',
+        })
         .select()
         .single();
 
@@ -162,7 +161,7 @@ export const RegisterEvent: React.FC = () => {
         throw new Error(regError?.message || 'Failed to submit registration.');
       }
 
-      // 3. Insert participant rows into public.participants
+      // 3. Insert participant rows into public.participants (Strictly using existing table columns)
       if (!isTeamMode) {
         const { error: partErr } = await supabase.from('participants').insert({
           registration_id: customRegId,
@@ -175,7 +174,6 @@ export const RegisterEvent: React.FC = () => {
           year: indYear,
           student_id: indStudentId,
           food_preference: indFood,
-          is_team_leader: true,
         });
 
         if (partErr) throw new Error(partErr.message);
@@ -186,12 +184,11 @@ export const RegisterEvent: React.FC = () => {
           name: m.name,
           email: m.email,
           phone: m.phone,
-          college: indCollege || (teamName ? `${teamName} Representative` : 'College Representative'),
+          college: indCollege || teamName + ' Institutional Representative',
           department: m.department,
           year: m.year,
           student_id: m.student_id,
           food_preference: m.food_preference,
-          is_team_leader: m.is_team_leader,
         }));
 
         const { error: teamPartErr } = await supabase.from('participants').insert(teamParticipantsPayload);
