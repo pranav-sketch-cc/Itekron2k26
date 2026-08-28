@@ -27,16 +27,14 @@ export const OrganizerDashboard: React.FC = () => {
     let scanner: Html5QrcodeScanner | null = null;
 
     if (showScanner) {
-      // Initialize HTML5 QR Code Scanner when modal opens
       scanner = new Html5QrcodeScanner(
         'qr-reader',
         { fps: 10, qrbox: { width: 250, height: 250 } },
-        /* verbose= */ false
+        false
       );
 
       scanner.render(
         (decodedText) => {
-          // Clean up scanned text (handles raw ID or full URL if encoded in QR)
           let cleanText = decodedText.trim();
           if (cleanText.includes('/pass/')) {
             cleanText = cleanText.split('/pass/').pop() || cleanText;
@@ -46,12 +44,9 @@ export const OrganizerDashboard: React.FC = () => {
           setShowScanner(false);
           scanner?.clear();
 
-          // Auto-execute search query with scanned ID
           executeSearchPass(cleanText);
         },
-        (errorMessage) => {
-          // Camera scan error (silent ignore during frame processing)
-        }
+        () => {}
       );
     }
 
@@ -98,7 +93,6 @@ export const OrganizerDashboard: React.FC = () => {
 
     const cleanId = idToSearch.trim().toUpperCase();
 
-    // Query registration row
     const { data: reg, error: regErr } = await supabase
       .from('registrations')
       .select(`
@@ -115,7 +109,6 @@ export const OrganizerDashboard: React.FC = () => {
 
     setActiveReg(reg as any);
 
-    // Fetch participant delegate list
     const { data: parts } = await supabase
       .from('participants')
       .select('*')
@@ -137,24 +130,42 @@ export const OrganizerDashboard: React.FC = () => {
     setCheckingIn(true);
     setStatusMessage(null);
 
-    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    const { error: updateErr } = await supabase
-      .from('registrations')
-      .update({
-        checked_in: true,
-        checked_in_at: new Date().toISOString(),
-        checked_in_by: session?.user.id,
-      })
-      .eq('registration_id', activeReg.registration_id);
+      // 1. Attempt standard update
+      let { error: updateErr } = await supabase
+        .from('registrations')
+        .update({
+          checked_in: true,
+          checked_in_at: new Date().toISOString(),
+          checked_in_by: session?.user?.id || null,
+        })
+        .eq('registration_id', activeReg.registration_id);
 
-    setCheckingIn(false);
+      // 2. Fallback: If checked_in_by or checked_in_at columns are structured differently, update just checked_in
+      if (updateErr) {
+        const { error: simpleErr } = await supabase
+          .from('registrations')
+          .update({
+            checked_in: true,
+          })
+          .eq('registration_id', activeReg.registration_id);
 
-    if (updateErr) {
-      setStatusMessage({ type: 'error', text: 'Failed to update check-in status: ' + updateErr.message });
-    } else {
-      setActiveReg({ ...activeReg, checked_in: true });
-      setStatusMessage({ type: 'success', text: `Successfully checked in Pass ${activeReg.registration_id}!` });
+        updateErr = simpleErr;
+      }
+
+      setCheckingIn(false);
+
+      if (updateErr) {
+        setStatusMessage({ type: 'error', text: 'Failed to update check-in status: ' + updateErr.message });
+      } else {
+        setActiveReg({ ...activeReg, checked_in: true });
+        setStatusMessage({ type: 'success', text: `Successfully checked in Pass ${activeReg.registration_id}!` });
+      }
+    } catch (err: any) {
+      setCheckingIn(false);
+      setStatusMessage({ type: 'error', text: err.message || 'Check-in failed.' });
     }
   };
 
