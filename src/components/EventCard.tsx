@@ -9,7 +9,7 @@ interface EventCardProps {
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event }) => {
-  // Extract event type and numeric team size using exact Supabase database fields
+  // Use exact logic as EventDetail.tsx (the reference implementation)
   const rawType = (event.event_type || event.team_type || '').toLowerCase();
   const numericTeamSize = Number(event.max_team_size || event.team_size || 1);
 

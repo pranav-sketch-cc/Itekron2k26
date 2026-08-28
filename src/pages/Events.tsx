@@ -78,6 +78,7 @@ export const Events: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => {
+            // Reference implementation logic from EventDetail.tsx
             const rawType = (event.event_type || event.team_type || '').toLowerCase();
             const numericTeamSize = Number(event.max_team_size || event.team_size || 1);
 
