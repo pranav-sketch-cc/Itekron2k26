@@ -23,9 +23,9 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           
           {/* LOGO & BRANDING */}
-          <Link href="/" className="flex items-center space-x-2.5 group">
-            {/* Transparent Logo Container Sized to Height of ITEKRON Text */}
-            <div className="h-7 sm:h-8 w-auto flex items-center justify-center bg-transparent flex-shrink-0">
+          <Link href="/" className="flex items-center space-x-3 group">
+            {/* Enlarged Transparent Logo Container */}
+            <div className="h-9 sm:h-11 w-auto flex items-center justify-center bg-transparent flex-shrink-0">
               <img
                 src={logoImg}
                 alt="ITEKRON 2K26 Emblem"
@@ -33,7 +33,7 @@ export const Navbar: React.FC = () => {
               />
             </div>
             
-            {/* ITEKRON Text (Unchanged) */}
+            {/* ITEKRON Text */}
             <div>
               <span className="text-xl font-black tracking-wider text-white flex items-center gap-1 leading-none">
                 ITEKRON <span className="text-red-500 text-xs font-mono font-bold bg-red-950/80 px-2 py-0.5 rounded-full border border-red-900/60">2K26</span>
