@@ -113,29 +113,6 @@ export const Footer: React.FC = () => {
 
         </div>
 
-        {/* 2. Venue Location Banner (Existing Section - Unchanged Content) */}
-        <div className="mt-12 md:mt-16 spider-card p-6 rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
-              <Building2 className="w-5 h-5 text-red-500" />
-            </div>
-            <div>
-              <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Symposium Venue</span>
-              <span className="block text-white font-bold text-sm">Chennai Institute of Technology, Kunrathur</span>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-slate-300 text-[11px] font-medium">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 text-blue-500" />
-              <span>Block A, CIT, Sarathy Nagar</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="w-3.5 h-3.5 text-slate-500" />
-              <span>Campus: 044-71119111</span>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       {/* 3. Copyright Bar (Existing Section - Unchanged Content) */}
