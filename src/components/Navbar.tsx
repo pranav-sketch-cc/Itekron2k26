@@ -23,7 +23,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           
           {/* LOGO & BRANDING */}
-          <Link href="/" className="flex items-center space-x-3 group">
+          <Link href="/" className="flex items-center space-x-1 group">
             {/* Enlarged Transparent Logo Container */}
             <div className="h-12 sm:h-16 w-auto flex items-center justify-center bg-transparent flex-shrink-0">
               <img
