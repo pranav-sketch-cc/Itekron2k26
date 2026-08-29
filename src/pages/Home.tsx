@@ -5,77 +5,87 @@ import heroImg from '../assets/output.png';
 
 export const Home: React.FC = () => {
   return (
-    <div className="min-h-screen pt-20 space-y-20">
+    <div className="min-h-screen pt-16 space-y-20 bg-[#04060a]">
       
-      {/* FULL-BLEED / LARGE HERO CONTAINER */}
-      <section className="relative w-screen left-1/2 -translate-x-1/2 min-h-[85vh] flex items-center px-4 sm:px-8 lg:px-16 overflow-hidden my-0">
+      {/* 
+        ==================================================
+        FULL-WIDTH 90VH CINEMATIC HERO CONTAINER
+        ==================================================
+      */}
+      <section className="relative w-full min-h-[90vh] flex items-center overflow-hidden bg-[#04060a]">
         
-        {/* 1. Full-Width Background Visual Container (Anchored Center-Top) */}
-        <div className="absolute inset-0 z-0">
+        {/* 1. Full-Bleed Background Image (Anchored Center-Top) */}
+        <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           <img
             src={heroImg}
             alt="ITEKRON 2K26 Visual Background"
             className="w-full h-full object-cover object-top"
           />
-          {/* Dark Gradients for High Text Legibility & Background Transition */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#04060a] via-[#04060a]/85 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#04060a] via-transparent to-[#04060a]/60" />
+
+          {/* Gradient Overlay for High Text Readability & Edge Blending */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#04060a] via-[#04060a]/85 to-transparent/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#04060a] via-transparent to-[#04060a]/50" />
           <div className="absolute inset-0 bg-spider-web opacity-20 pointer-events-none" />
         </div>
 
-        {/* 2. Layered Content Area (Left-Aligned Text Layered Over Image) */}
-        <div className="relative z-10 py-16 lg:py-24 max-w-4xl mx-auto lg:mx-0 text-left space-y-6">
-          
-          <div className="inline-flex items-center space-x-2 bg-red-950/70 border border-red-900/60 px-4 py-1.5 rounded-full text-red-400 text-xs font-bold tracking-widest uppercase shadow-lg shadow-red-950/40 backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5 text-red-400" />
-            <span>National Level Technical Symposium</span>
+        {/* 2. Text Content Layered Directly Over the Full-Width Image */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="max-w-2xl text-left space-y-6">
+            
+            {/* Tag Pill */}
+            <div className="inline-flex items-center space-x-2 bg-red-950/80 border border-red-900/70 px-4 py-1.5 rounded-full text-red-400 text-xs font-bold tracking-widest uppercase shadow-xl shadow-red-950/50 backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-red-400" />
+              <span>National Level Technical Symposium</span>
+            </div>
+
+            {/* Main Heading: ITEKRON 2K26 */}
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight text-white leading-none drop-shadow-lg">
+              ITEKRON <br />
+              <span className="bg-gradient-to-r from-red-500 via-red-600 to-blue-500 bg-clip-text text-transparent">
+                2K26
+              </span>
+            </h1>
+
+            {/* Supporting Description */}
+            <p className="text-xs sm:text-sm text-slate-200 max-w-xl leading-relaxed drop-shadow-md">
+              Welcome to <strong className="text-white">ITEKRON 2K26</strong>, organized by the Department of Information Technology.
+              Test your technical prowess, hackathon ingenuity, and UI design precision in a high-octane engineering arena.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+              <Link
+                href="/events"
+                className="spider-button-primary w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center space-x-2 group"
+              >
+                <span>EXPLORE EVENTS</span>
+                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition" />
+              </Link>
+              <Link
+                href="/signup"
+                className="spider-button-secondary w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center space-x-2"
+              >
+                <span>REGISTER NOW</span>
+              </Link>
+            </div>
+
+            {/* Quick Event Stats Grid */}
+            <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Technical Events', val: '10+', icon: Cpu },
+                { label: 'Cash Prize Pool', val: '₹50,000+', icon: Award },
+                { label: 'Colleges Expected', val: '50+', icon: Users },
+                { label: 'Symposium Date', val: '26 SEPT 2026', icon: Calendar },
+              ].map((stat, idx) => (
+                <div key={idx} className="spider-card p-3.5 rounded-2xl text-left space-y-1 bg-slate-950/85 backdrop-blur-md border border-slate-800/80">
+                  <stat.icon className="w-4 h-4 text-red-500 mb-1" />
+                  <span className="text-base font-black text-white block">{stat.val}</span>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{stat.label}</span>
+                </div>
+              ))}
+            </div>
+
           </div>
-
-          {/* Main Heading: ITEKRON 2K26 */}
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight text-white leading-none">
-            ITEKRON <br />
-            <span className="bg-gradient-to-r from-red-500 via-red-600 to-blue-500 bg-clip-text text-transparent">
-              2K26
-            </span>
-          </h1>
-
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed drop-shadow-md">
-            Welcome to <strong className="text-white">ITEKRON 2K26</strong>, organized by the Department of Information Technology.
-            Test your technical prowess, hackathon ingenuity, and UI design precision in a high-octane engineering arena.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-            <Link
-              href="/events"
-              className="spider-button-primary w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center space-x-2 group"
-            >
-              <span>EXPLORE EVENTS</span>
-              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition" />
-            </Link>
-            <Link
-              href="/signup"
-              className="spider-button-secondary w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center space-x-2"
-            >
-              <span>REGISTER NOW</span>
-            </Link>
-          </div>
-
-          {/* Quick Event Stats Grid */}
-          <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Technical Events', val: '10+', icon: Cpu },
-              { label: 'Cash Prize Pool', val: '₹50,000+', icon: Award },
-              { label: 'Colleges Expected', val: '50+', icon: Users },
-              { label: 'Symposium Date', val: '26 SEPT 2026', icon: Calendar },
-            ].map((stat, idx) => (
-              <div key={idx} className="spider-card p-3.5 rounded-2xl text-left space-y-1 bg-slate-950/80 backdrop-blur-md">
-                <stat.icon className="w-4 h-4 text-red-500 mb-1" />
-                <span className="text-base font-black text-white block">{stat.val}</span>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-
         </div>
       </section>
 
