@@ -7,24 +7,24 @@ export const Home: React.FC = () => {
   return (
     <div className="min-h-screen pt-20 space-y-20">
       
-      {/* FULL-WIDTH CINEMATIC HERO SECTION WITH OVERLAY */}
-      <section className="relative min-h-[85vh] flex items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden rounded-3xl my-4">
+      {/* FULL-BLEED / LARGE HERO CONTAINER */}
+      <section className="relative w-screen left-1/2 -translate-x-1/2 min-h-[85vh] flex items-center px-4 sm:px-8 lg:px-16 overflow-hidden my-0">
         
-        {/* 1. Full-Width Background Visual Layer (Zoomed & Centered) */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* 1. Full-Width Background Visual Container (Anchored Center-Top) */}
+        <div className="absolute inset-0 z-0">
           <img
             src={heroImg}
             alt="ITEKRON 2K26 Visual Background"
-            className="w-full h-full object-cover object-center scale-120 transform transition-transform duration-500"
+            className="w-full h-full object-cover object-top"
           />
-          {/* Subtle Dark Overlays for Text Contrast & Seamless Background Blending */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#04060a] via-[#04060a]/80 to-transparent" />
+          {/* Dark Gradients for High Text Legibility & Background Transition */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#04060a] via-[#04060a]/85 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#04060a] via-transparent to-[#04060a]/60" />
           <div className="absolute inset-0 bg-spider-web opacity-20 pointer-events-none" />
         </div>
 
-        {/* 2. Layered Content Area (Left-Aligned Text over Background) */}
-        <div className="relative z-10 py-16 lg:py-24 max-w-3xl text-left space-y-6">
+        {/* 2. Layered Content Area (Left-Aligned Text Layered Over Image) */}
+        <div className="relative z-10 py-16 lg:py-24 max-w-4xl mx-auto lg:mx-0 text-left space-y-6">
           
           <div className="inline-flex items-center space-x-2 bg-red-950/70 border border-red-900/60 px-4 py-1.5 rounded-full text-red-400 text-xs font-bold tracking-widest uppercase shadow-lg shadow-red-950/40 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-red-400" />
@@ -32,7 +32,7 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Main Heading: ITEKRON 2K26 */}
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tight text-white leading-none">
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight text-white leading-none">
             ITEKRON <br />
             <span className="bg-gradient-to-r from-red-500 via-red-600 to-blue-500 bg-clip-text text-transparent">
               2K26
