@@ -50,8 +50,7 @@ export const About: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300">
           {[
             'Verified Digital Pass with QR verification',
-            'Cash prize awards for top performers',
-            'On-campus lunch & refreshment facilities',
+            'On-campus lunch facilities',
             'Participation certificates for all registered candidates',
             'Networking opportunities with engineering peers',
             'Expert faculty jury evaluations',

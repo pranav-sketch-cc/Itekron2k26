@@ -3,7 +3,7 @@ import { Award, ExternalLink } from 'lucide-react';
 
 export const Sponsors: React.FC = () => {
   const sponsorList = [
-    { name: 'Quantum ARC', tier: 'Technology Partner', category: 'App & Web Solutions' },
+    { name: 'Quantum ARC', tier: 'Technology & Certification Partner',category: 'Web Development, Technical Support & Certification' },
     
   ];
 

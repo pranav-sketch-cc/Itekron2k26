@@ -17,11 +17,15 @@ export const Home: React.FC = () => {
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-none">
-            UNLEASH THE <br />
+            ITEKRON <br />
             <span className="bg-gradient-to-r from-red-500 via-red-600 to-blue-500 bg-clip-text text-transparent">
-              DIGITAL MATRIX
+              2K26
+            </span>
+            <span className="text-sm sm:text-base text-slate-400 block mt-2 font-semibold tracking-wider">
+              Department of Information Technology
             </span>
           </h1>
+
 
           <p className="text-xs sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
             Welcome to <strong className="text-white">ITEKRON 2K26</strong>, organized by the Department of Information Technology.
