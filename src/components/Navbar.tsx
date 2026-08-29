@@ -25,7 +25,7 @@ export const Navbar: React.FC = () => {
           {/* LOGO & BRANDING */}
           <Link href="/" className="flex items-center space-x-3 group">
             {/* Enlarged Transparent Logo Container */}
-            <div className="h-9 sm:h-11 w-auto flex items-center justify-center bg-transparent flex-shrink-0">
+            <div className="h-12 sm:h-16 w-auto flex items-center justify-center bg-transparent flex-shrink-0">
               <img
                 src={logoImg}
                 alt="ITEKRON 2K26 Emblem"
