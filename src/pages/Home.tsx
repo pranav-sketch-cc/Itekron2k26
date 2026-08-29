@@ -50,10 +50,9 @@ export const Home: React.FC = () => {
           </div>
 
           {/* QUICK EVENT STATS GRID */}
-          <div className="pt-12 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          <div className="pt-12 grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
             {[
-              { label: 'Technical Events', val: '10+', icon: Cpu },
-              { label: 'Cash Prize Pool', val: '₹50,000+', icon: Award },
+              { label: 'Technical Events', val: '10', icon: Cpu },
               { label: 'Colleges Expected', val: '50+', icon: Users },
               { label: 'Symposium Date', val: '26 SEPT 2026', icon: Calendar },
             ].map((stat, idx) => (
