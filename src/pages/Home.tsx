@@ -10,12 +10,12 @@ export const Home: React.FC = () => {
       {/* FULL-WIDTH CINEMATIC HERO SECTION WITH OVERLAY */}
       <section className="relative min-h-[85vh] flex items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden rounded-3xl my-4">
         
-        {/* 1. Full-Width Background Visual Layer */}
-        <div className="absolute inset-0 z-0">
+        {/* 1. Full-Width Background Visual Layer (Zoomed & Centered) */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <img
             src={heroImg}
             alt="ITEKRON 2K26 Visual Background"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-center scale-120 transform transition-transform duration-500"
           />
           {/* Subtle Dark Overlays for Text Contrast & Seamless Background Blending */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#04060a] via-[#04060a]/80 to-transparent" />
@@ -31,7 +31,7 @@ export const Home: React.FC = () => {
             <span>National Level Technical Symposium</span>
           </div>
 
-          {/* Updated Main Heading: ITEKRON 2K26 */}
+          {/* Main Heading: ITEKRON 2K26 */}
           <h1 className="text-5xl sm:text-7xl font-black tracking-tight text-white leading-none">
             ITEKRON <br />
             <span className="bg-gradient-to-r from-red-500 via-red-600 to-blue-500 bg-clip-text text-transparent">
