@@ -1,183 +1,133 @@
 import React, { useState } from 'react';
 import { Link } from 'wouter';
-import { supabase } from '../lib/supabase';
-import { Mail, Lock, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Shield, Mail, Lock, User, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export const SignUp: React.FC = () => {
+export const Signup: React.FC = () => {
+  const auth = useAuth() as any;
+
+  // Support whichever method name exists in AuthContext
+  const registerFn = auth.signUp || auth.signup || auth.register || auth.signUpWithPassword;
+
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    const trimmedEmail = email.trim();
-
-    if (!trimmedEmail) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
-    }
-
     setLoading(true);
 
-    // Dynamic redirect URL based on current host origin (production-safe, no hardcoded localhost)
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const redirectUrl = `${origin}/auth/callback`;
+    try {
+      const result = await registerFn(email.trim(), password, fullName.trim());
+      if (result?.error) throw result.error;
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: trimmedEmail,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    });
-
-    setLoading(false);
-
-    if (signUpError) {
-      // Handle actual existing account responses from Supabase API
-      const errMsg = signUpError.message.toLowerCase();
-      if (
-        errMsg.includes('already registered') ||
-        errMsg.includes('user already exists') ||
-        errMsg.includes('email address is already registered')
-      ) {
-        setError('An account with this email already exists. Please try logging in.');
-      } else {
-        setError(signUpError.message);
-      }
-      return;
-    }
-
-    // Success response: session will be null if email confirmation is required by Supabase
-    if (data?.user) {
       setSuccess(true);
-    } else {
-      setError('An unexpected error occurred during signup. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to create account.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 flex flex-col justify-center px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-red-500 to-blue-500 bg-clip-text text-transparent">
-          Create Your Account
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Join ITEKRON 2K26 to register for events and manage your digital passes.
-        </p>
-      </div>
+    <div className="min-h-screen pt-24 pb-12 flex items-center justify-center px-4">
+      <div className="spider-card p-8 rounded-3xl max-w-md w-full space-y-6">
+        <div className="text-center space-y-2">
+          <div className="inline-flex p-3 rounded-2xl bg-red-950/60 border border-red-900/50 text-red-500 mb-1">
+            <Shield className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-black text-white">Create Account</h1>
+          <p className="text-xs text-slate-400">Register as a participant for ITEKRON 2K26.</p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="spider-card p-8 rounded-2xl shadow-xl">
-          {success ? (
-            <div className="text-center space-y-4">
-              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto animate-bounce" />
-              <h3 className="text-xl font-bold text-white">Account Created Successfully</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Account created successfully. Please check your email (<span className="text-red-400 font-semibold">{email}</span>) to verify your account.
-              </p>
-              <div className="pt-4 border-t border-slate-800">
-                <Link href="/login" className="spider-button-primary inline-flex items-center space-x-2 px-6 py-2.5 rounded-full text-sm font-semibold">
-                  <span>Go to Login</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+        {success ? (
+          <div className="p-6 bg-emerald-950/60 border border-emerald-800 rounded-2xl text-center space-y-3 text-xs">
+            <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+            <h3 className="font-bold text-white text-sm">Verification Email Sent</h3>
+            <p className="text-slate-300">
+              We have dispatched a verification link to <strong className="text-white">{email}</strong>. Please confirm your email to sign in.
+            </p>
+            <Link href="/login" className="spider-button-primary inline-block px-6 py-2.5 rounded-xl font-bold mt-2">
+              Proceed to Login
+            </Link>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3.5 bg-red-950/80 border border-red-800 rounded-2xl flex items-center space-x-2 text-red-300 text-xs">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-300 uppercase mb-1">Full Name</label>
+              <div className="relative">
+                <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+                />
               </div>
             </div>
-          ) : (
-            <form onSubmit={handleSignUp} className="space-y-5">
-              {error && (
-                <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl flex items-center space-x-2 text-red-300 text-xs">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="student@college.edu"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500 transition"
-                  />
-                </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-300 uppercase mb-1">Email Address</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="student@college.edu"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+                />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500 transition"
-                  />
-                </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-300 uppercase mb-1">Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-red-500"
+                />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500 transition"
-                  />
-                </div>
-              </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full spider-button-primary py-3 rounded-2xl text-xs font-bold shadow-lg transition disabled:opacity-50"
+            >
+              {loading ? 'Creating Account...' : 'Sign Up'}
+            </button>
+          </form>
+        )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full spider-button-primary py-3 rounded-xl text-sm font-bold disabled:opacity-50 transition"
-              >
-                {loading ? 'Creating Account...' : 'Sign Up'}
-              </button>
-
-              <p className="text-center text-xs text-slate-400 pt-2">
-                Already have an account?{' '}
-                <Link href="/login" className="text-red-400 hover:underline font-semibold">
-                  Sign In
-                </Link>
-              </p>
-            </form>
-          )}
-        </div>
+        <p className="text-center text-xs text-slate-400">
+          Already registered?{' '}
+          <Link href="/login" className="text-red-400 font-bold hover:underline">
+            Sign In Here
+          </Link>
+        </p>
       </div>
     </div>
   );
 };
 
-export default SignUp;
+export default Signup;

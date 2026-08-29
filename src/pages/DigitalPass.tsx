@@ -1,57 +1,74 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'wouter';
-import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
-import { Registration } from '../types/database';
+import { Registration, Participant } from '../types/database';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { StatusBadge } from '../components/StatusBadge';
-import { ArrowLeft, CheckCircle2, ShieldCheck, MapPin, Calendar, Clock } from 'lucide-react';
-import { formatDate } from '../lib/utils';
+import { QRCodeSVG } from 'qrcode.react';
+import { Shield, ArrowLeft, Download, CheckCircle2, Calendar, MapPin, Users } from 'lucide-react';
 
 export const DigitalPass: React.FC = () => {
-  const params = useParams<{ registrationId: string }>();
+  const params = useParams<{ id: string }>();
   const [registration, setRegistration] = useState<Registration | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const registrationCustomId = params?.registrationId;
+  const passId = params?.id;
 
   useEffect(() => {
-    if (registrationCustomId) {
-      fetchPassDetails(registrationCustomId);
+    if (passId) {
+      fetchPassData(passId);
     }
-  }, [registrationCustomId]);
+  }, [passId]);
 
-  const fetchPassDetails = async (regId: string) => {
+  const fetchPassData = async (id: string) => {
     setLoading(true);
-    setError(null);
+    try {
+      const { data: reg, error: regErr } = await supabase
+        .from('registrations')
+        .select(`
+          *,
+          events (*)
+        `)
+        .eq('registration_id', id)
+        .maybeSingle();
 
-    const { data, error } = await supabase
-      .from('registrations')
-      .select(`
-        *,
-        events (*),
-        participants (*),
-        teams (*, team_members (*))
-      `)
-      .eq('registration_id', regId)
-      .single();
+      if (regErr || !reg) {
+        setError('Digital Pass record not found.');
+        setLoading(false);
+        return;
+      }
 
-    if (error || !data) {
-      setError('Digital pass record not found.');
-    } else {
-      setRegistration(data);
+      setRegistration(reg as any);
+
+      const { data: parts } = await supabase
+        .from('participants')
+        .select('*')
+        .eq('registration_id', id);
+
+      if (parts) {
+        setParticipants(parts);
+      }
+    } catch (err) {
+      setError('Failed to retrieve Digital Pass.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  if (loading) return <div className="min-h-screen pt-24"><LoadingSpinner message="Generating digital pass..." /></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-28 flex items-center justify-center">
+        <LoadingSpinner message="Generating your official digital pass..." />
+      </div>
+    );
+  }
 
   if (error || !registration) {
     return (
-      <div className="min-h-screen pt-24 px-4 text-center">
-        <div className="spider-card max-w-md mx-auto p-6 rounded-2xl text-slate-300 space-y-4">
-          <p>{error || 'Invalid Digital Pass'}</p>
+      <div className="min-h-screen pt-28 px-4 text-center">
+        <div className="spider-card max-w-md mx-auto p-8 rounded-3xl space-y-4">
+          <p className="text-xs text-slate-300">{error || 'Pass not found.'}</p>
           <Link href="/my-registrations" className="spider-button-secondary inline-block px-4 py-2 rounded-xl text-xs">
             Return to My Passes
           </Link>
@@ -60,82 +77,81 @@ export const DigitalPass: React.FC = () => {
     );
   }
 
-  const isCheckedIn = Boolean(registration.checked_in_at);
-  const isTeam = registration.registration_type === 'team';
-  const participantName = isTeam 
-    ? registration.teams?.[0]?.team_name 
-    : registration.participants?.[0]?.name;
+  const primaryParticipant = participants[0];
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-md mx-auto">
-      <Link href="/my-registrations" className="inline-flex items-center space-x-1 text-xs text-slate-400 hover:text-white transition mb-6">
+    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-xl mx-auto space-y-6">
+      <Link href="/my-registrations" className="inline-flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white transition">
         <ArrowLeft className="w-4 h-4" />
         <span>Back to My Passes</span>
       </Link>
 
-      {/* Ticket Container */}
-      <div className="spider-card rounded-3xl overflow-hidden border border-red-500/30 shadow-2xl">
+      {/* OFFICIAL DIGITAL PASS BADGE */}
+      <div className="spider-card rounded-3xl overflow-hidden border-2 border-red-900/60 shadow-2xl relative">
         {/* Pass Header */}
-        <div className="bg-gradient-to-r from-red-950/80 via-slate-900 to-blue-950/80 p-6 text-center border-b border-red-900/40">
-          <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-red-400 block mb-1">
-            ITEKRON 2K26 OFFICIAL PASS
+        <div className="bg-gradient-to-r from-red-950 via-slate-900 to-blue-950 p-6 text-center space-y-2 border-b border-red-900/40">
+          <div className="flex items-center justify-center space-x-2">
+            <Shield className="w-5 h-5 text-red-500" />
+            <span className="text-sm font-black text-white tracking-wider">ITEKRON 2K26</span>
+          </div>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-red-400 bg-black/50 px-3 py-1 rounded-full border border-red-900/50 block w-fit mx-auto">
+            OFFICIAL ENTRY DELEGATE PASS
           </span>
-          <h1 className="text-xl font-black text-white tracking-tight">
-            {registration.events?.name}
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            {isTeam ? `Team: ${participantName}` : `Participant: ${participantName}`}
-          </p>
         </div>
 
-        {/* Real QR Code Display */}
-        <div className="p-8 text-center bg-slate-950/90 space-y-4">
-          <div className="bg-white p-4 rounded-2xl inline-block shadow-inner">
+        {/* Pass Body */}
+        <div className="p-6 sm:p-8 space-y-6 text-center">
+          <div>
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">PASS ID</span>
+            <span className="text-2xl font-mono font-black text-red-400 tracking-wider block">{registration.registration_id}</span>
+          </div>
+
+          {/* QR CODE CONTAINER */}
+          <div className="p-4 bg-white rounded-2xl max-w-[200px] mx-auto shadow-xl border-4 border-slate-800">
             <QRCodeSVG
               value={registration.registration_id}
-              size={180}
+              size={160}
               level="H"
               includeMargin={false}
             />
           </div>
 
-          <div className="space-y-1">
-            <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Registration ID</span>
-            <span className="text-2xl font-mono font-black text-red-400 tracking-wider">
-              {registration.registration_id}
-            </span>
-          </div>
-
-          <div className="pt-2">
-            <StatusBadge 
-              status={isCheckedIn ? 'checked_in' : 'confirmed'} 
-              type="checkin" 
-            />
-          </div>
-        </div>
-
-        {/* Details Section */}
-        <div className="p-6 bg-slate-900/60 border-t border-slate-800/80 space-y-3 text-xs text-slate-300">
-          <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
-            <span className="text-slate-500 flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> Date & Time</span>
-            <span className="font-semibold text-white">{formatDate(registration.events?.date_time)}</span>
-          </div>
-
-          <div className="flex justify-between items-center py-1 border-b border-slate-800/60">
-            <span className="text-slate-500 flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Venue</span>
-            <span className="font-semibold text-white">{registration.events?.venue || 'TBA'}</span>
-          </div>
-
-          {isCheckedIn && (
-            <div className="p-3 bg-emerald-950/60 border border-emerald-800/80 rounded-xl text-center text-emerald-400 text-[11px] font-medium space-y-1">
-              <div className="flex items-center justify-center space-x-1">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Checked-in at {formatDate(registration.checked_in_at!)}</span>
-              </div>
+          {/* EVENT & DELEGATE DETAILS */}
+          <div className="space-y-3 pt-2 text-left bg-slate-950 p-4 rounded-2xl border border-slate-900">
+            <div className="border-b border-slate-900 pb-2">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Event Name</span>
+              <span className="text-sm font-bold text-white block">{registration.events?.name}</span>
             </div>
-          )}
+
+            {primaryParticipant && (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Delegate</span>
+                  <span className="text-white font-semibold">{primaryParticipant.name}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">College</span>
+                  <span className="text-slate-300 truncate block">{primaryParticipant.college}</span>
+                </div>
+              </div>
+            )}
+
+            {registration.team_name && (
+              <div className="pt-2 border-t border-slate-900 text-xs">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Team Name</span>
+                <span className="text-blue-400 font-bold">{registration.team_name} ({participants.length} Members)</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-center space-x-2 text-xs text-slate-400">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>Show this QR code at the desk scanner for entry validation.</span>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default DigitalPass;

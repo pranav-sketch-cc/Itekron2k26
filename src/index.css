@@ -1,81 +1,103 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --bg-dark: #030712;
-    --card-bg: rgba(15, 23, 42, 0.6);
-    --border-subtle: rgba(239, 68, 68, 0.2);
-    --red-accent: #ef4444;
-    --blue-accent: #2563eb;
-  }
-
-  body {
-    background-color: var(--bg-dark);
-    color: #f3f4f6;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-    /* Subtle spider-web grid pattern overlay */
-    background-image: 
-      radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.12) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.08) 0%, transparent 40%),
-      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-  }
+:root {
+  color-scheme: dark;
 }
 
-/* Custom Web Glow & Card Utilities */
+body {
+  background-color: #05070c;
+  color: #f1f5f9;
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(220, 38, 38, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 15% 70%, rgba(220, 38, 38, 0.08) 0%, transparent 45%);
+  background-attachment: fixed;
+}
+
+/* Subtle Spider Web Background Pattern */
+.bg-spider-web {
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Glassmorphic Card Styling */
 .spider-card {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  background-color: rgba(2, 6, 23, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.spider-card-glow {
+  position: relative;
+  overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.spider-card:hover {
+.spider-card-glow:hover {
   border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: 0 0 20px -5px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(127, 29, 29, 0.25);
+  transform: translateY(-4px);
 }
 
+/* Primary Action Button */
 .spider-button-primary {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background-image: linear-gradient(to right, #dc2626, #b91c1c);
   color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 0 15px -3px rgba(239, 68, 68, 0.4);
-  transition: all 0.2s ease;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  box-shadow: 0 10px 15px -3px rgba(127, 29, 29, 0.5);
+  transition: all 0.2s ease-in-out;
 }
 
 .spider-button-primary:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  box-shadow: 0 0 20px 0px rgba(239, 68, 68, 0.6);
-  transform: translateY(-1px);
+  background-image: linear-gradient(to right, #ef4444, #dc2626);
+  box-shadow: 0 10px 20px -3px rgba(239, 68, 68, 0.35);
 }
 
+.spider-button-primary:active {
+  transform: scale(0.98);
+}
+
+/* Secondary Action Button */
 .spider-button-secondary {
-  background: rgba(30, 58, 138, 0.4);
-  border: 1px solid rgba(37, 99, 235, 0.4);
-  color: #93c5fd;
-  transition: all 0.2s ease;
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
 }
 
 .spider-button-secondary:hover {
-  background: rgba(30, 58, 138, 0.7);
-  border-color: rgba(59, 130, 246, 0.6);
+  background-color: #1e293b;
+  border-color: rgba(59, 130, 246, 0.5);
   color: #ffffff;
+}
+
+.spider-button-secondary:active {
+  transform: scale(0.98);
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #030712;
+  background: #05070c;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #ef4444;
 }
