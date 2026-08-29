@@ -1,67 +1,148 @@
 import React from 'react';
 import { Link } from 'wouter';
-import { Shield, Mail, MapPin, Phone, Github, Heart } from 'lucide-react';
+import { Mail, MapPin, Phone, Building2 } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#030408] border-t border-slate-800/80 pt-16 pb-12 text-xs text-slate-400">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="w-full bg-[#030508] border-t border-slate-900/60 text-slate-400 text-xs mt-auto">
+      
+      {/* 1. Main Footer Content (Modified Grid structure) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        
+        {/* Desktop Layout: Links | Portals | Venue | Contact (4 cols) */}
+        {/* Mobile/Tablet: Stacked or smaller grid */}
+        <div className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1.5fr,1fr] gap-x-10 gap-y-12">
           
-          {/* BRAND */}
-          <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5 text-red-500" />
-              <span className="text-base font-black text-white">ITEKRON 2K26</span>
-            </div>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
-              National Level Technical Symposium organized by the Department of Information Technology.
+          {/* Logo & Info (1st Col) */}
+          <div className="space-y-4 md:col-span-1">
+            <Link href="/" className="flex items-center space-x-3 group">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 p-1 rounded-xl bg-red-950/40 border border-red-900/40 flex items-center justify-center group-hover:border-red-500/80 transition duration-300 flex-shrink-0">
+                <img
+                  src={logoImg}
+                  alt="ITEKRON 2K26 Emblem"
+                  className="w-full h-full object-contain transform group-hover:scale-110 transition duration-300"
+                />
+              </div>
+              <div>
+                <span className="text-xl font-black tracking-wider text-white flex items-center gap-1 leading-none">
+                  ITEKRON <span className="text-red-500 text-xs font-mono font-bold bg-red-950/80 px-2 py-0.5 rounded-full border border-red-900/60 leading-tight">2K26</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-semibold tracking-widest block uppercase mt-0.5">Department of Information Technology</span>
+              </div>
+            </Link>
+            <p className="leading-relaxed max-w-sm">
+              ITEKRON 2K26 is the national level technical symposium organized by the Department of IT, CIT, where innovation meets fierce competition.
             </p>
           </div>
 
-          {/* QUICK LINKS */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Quick Links</h4>
-            <ul className="space-y-2">
-              <li><Link href="/events" className="hover:text-white transition">All Events</Link></li>
-              <li><Link href="/schedule" className="hover:text-white transition">Event Schedule</Link></li>
-              <li><Link href="/about" className="hover:text-white transition">About Symposium</Link></li>
-              <li><Link href="/sponsors" className="hover:text-white transition">Sponsors</Link></li>
+          {/* Quick Links & Portals (2nd & 3rd Col on Desktop, Grid on Mobile) */}
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-8 md:col-span-2">
+            
+            {/* Quick Links */}
+            <div className="space-y-4">
+              <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px]">Quick Links</h5>
+              <ul className="space-y-2.5">
+                {[
+                  { label: 'About Page', href: '/about' },
+                  { label: 'Event Schedule', href: '/schedule' },
+                  { label: 'Symposium Sponsors', href: '/sponsors' },
+                  { label: 'Core Organizing Team', href: '/about#team' },
+                ].map((link, idx) => (
+                  <li key={idx}>
+                    <Link href={link.href} className="hover:text-red-400 transition">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Portals */}
+            <div className="space-y-4">
+              <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px]">Portals</h5>
+              <ul className="space-y-2.5">
+                {[
+                  { label: 'Participant Log In', href: '/login' },
+                  { label: 'Organizer Portal Desk', href: '/organizer/login' },
+                  { label: 'System Check-In Scanner', href: '/organizer/scanner' },
+                  { label: 'Admin Dashboard Hub', href: '/admin/login' },
+                ].map((link, idx) => (
+                  <li key={idx}>
+                    <Link href={link.href} className="hover:text-blue-400 transition font-medium">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* 
+            ==================================================
+            CONTACT SECTION (NEW, 4th Col on Desktop)
+            ==================================================
+          */}
+          <div className="space-y-4 md:col-span-1">
+            <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px]">Contact</h5>
+            <ul className="space-y-3.5 text-slate-300">
+              
+              {/* Phone (Clickable tel link) */}
+              <li className="flex items-start gap-3">
+                <Phone className="w-3.5 h-3.5 text-red-500 mt-1 flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="block text-slate-400 text-[10px] font-bold">Symposium Helpline</span>
+                  <a href="tel:+917010438705" className="font-mono text-white hover:text-red-300 font-bold transition">
+                    +91 70104 38705
+                  </a>
+                </div>
+              </li>
+              
+              {/* Email Placeholder (Non-clickable text) */}
+              <li className="flex items-start gap-3">
+                <Mail className="w-3.5 h-3.5 text-blue-500 mt-1 flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="block text-slate-400 text-[10px] font-bold">Official Event Email</span>
+                  <span className="font-mono text-slate-300 italic">
+                    Coming soon
+                  </span>
+                </div>
+              </li>
             </ul>
           </div>
 
-          {/* PARTICIPANT LINKS */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Portals</h4>
-            <ul className="space-y-2">
-              <li><Link href="/my-registrations" className="hover:text-white transition">My Pass Dashboard</Link></li>
-              <li><Link href="/login" className="hover:text-white transition">Participant Login</Link></li>
-              <li><Link href="/organizer/login" className="hover:text-white transition">Organizer Verification Portal</Link></li>
-            </ul>
-          </div>
+        </div>
 
-          {/* VENUE & CONTACT */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Venue Location</h4>
-            <div className="space-y-2 text-[11px] text-slate-400">
-              <div className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <span>Department of Information Technology, Campus Auditorium</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>itekron2k26@gmail.com</span>
-              </div>
+        {/* 2. Venue Location Banner (Existing Section - Unchanged Content) */}
+        <div className="mt-12 md:mt-16 spider-card p-6 rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
+              <Building2 className="w-5 h-5 text-red-500" />
+            </div>
+            <div>
+              <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Symposium Venue</span>
+              <span className="block text-white font-bold text-sm">Chennai Institute of Technology, Kunrathur</span>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-slate-300 text-[11px] font-medium">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5 text-blue-500" />
+              <span>Block A, CIT, Sarathy Nagar</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="w-3.5 h-3.5 text-slate-500" />
+              <span>Campus: 044-71119111</span>
             </div>
           </div>
         </div>
 
-        {/* COPYRIGHT */}
-        <div className="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between text-[10px] text-slate-500 gap-2">
-          <p>© 2026 ITEKRON. All rights reserved.</p>
-          <p className="flex items-center space-x-1">
-            <span>Crafted for ITEKRON 2K26 Technical Symposium</span>
-          </p>
+      </div>
+
+      {/* 3. Copyright Bar (Existing Section - Unchanged Content) */}
+      <div className="border-t border-slate-900/60 bg-[#020406] py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:flex sm:items-center sm:justify-between text-slate-600 font-mono text-[10px]">
+          <p>&copy; 2026 ITEKRON Symposium Department of IT. All rights reserved.</p>
+          <p className="mt-2 sm:mt-0 italic">New Prince Shri Bhavani College, Santhosapuram, Chennai 600069</p>
         </div>
       </div>
     </footer>

@@ -7,11 +7,7 @@ export const Home: React.FC = () => {
   return (
     <div className="min-h-screen pt-16 space-y-20 bg-[#04060a]">
       
-      {/* 
-        ==================================================
-        FULL-WIDTH 90VH CINEMATIC HERO CONTAINER
-        ==================================================
-      */}
+      {/* FULL-WIDTH 90VH CINEMATIC HERO CONTAINER */}
       <section className="relative w-full min-h-[90vh] flex items-center overflow-hidden bg-[#04060a]">
         
         {/* 1. Full-Bleed Background Image (Anchored Center-Top) */}
@@ -69,11 +65,11 @@ export const Home: React.FC = () => {
               </Link>
             </div>
 
-            {/* Quick Event Stats Grid */}
-            <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Quick Event Stats Grid (Modified: Removed Cash Prize Card) */}
+            <div className="pt-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Technical Events', val: '10+', icon: Cpu },
-                { label: 'Cash Prize Pool', val: '₹50,000+', icon: Award },
+                // Removed: { label: 'Cash Prize Pool', val: '₹50,000+', icon: Award },
                 { label: 'Colleges Expected', val: '50+', icon: Users },
                 { label: 'Symposium Date', val: '26 SEPT 2026', icon: Calendar },
               ].map((stat, idx) => (
