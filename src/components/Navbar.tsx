@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '../contexts/AuthContext';
-import { Shield, Menu, X, LogOut, Ticket, Calendar, Award, Info, Home, ShieldCheck } from 'lucide-react';
+import { Menu, X, LogOut, Ticket, Calendar, Award, Info, Home, ShieldCheck } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 export const Navbar: React.FC = () => {
   const [location] = useLocation();
@@ -21,11 +22,18 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* LOGO */}
+          {/* LOGO & BRANDING */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="p-2 rounded-2xl bg-red-950/60 border border-red-900/50 text-red-500 group-hover:border-red-500/80 transition duration-300">
-              <Shield className="w-6 h-6 transform group-hover:scale-110 transition duration-300" />
+            {/* Custom Logo Image Container (Replaces Shield Icon) */}
+            <div className="w-9 h-9 sm:w-10 sm:h-10 p-1 rounded-xl bg-red-950/40 border border-red-900/40 flex items-center justify-center group-hover:border-red-500/80 transition duration-300 flex-shrink-0">
+              <img
+                src={logoImg}
+                alt="ITEKRON 2K26 Emblem"
+                className="w-full h-full object-contain transform group-hover:scale-110 transition duration-300"
+              />
             </div>
+            
+            {/* ITEKRON Text (Unchanged) */}
             <div>
               <span className="text-xl font-black tracking-wider text-white flex items-center gap-1">
                 ITEKRON <span className="text-red-500 text-xs font-mono font-bold bg-red-950/80 px-2 py-0.5 rounded-full border border-red-900/60">2K26</span>
@@ -54,7 +62,7 @@ export const Navbar: React.FC = () => {
             })}
           </div>
 
-          {/* USER ACTIONS / AUTH LOGIC (UNCHANGED FUNCTIONALITY) */}
+          {/* USER ACTIONS / AUTH LOGIC */}
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <div className="flex items-center space-x-3">
@@ -90,7 +98,7 @@ export const Navbar: React.FC = () => {
               </div>
             )}
             
-            {/* ORGANIZER PORTAL QUICK ACCESS LINK */}
+            {/* ORGANIZER PORTAL ACCESS LINK */}
             <Link
               href="/organizer/login"
               className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-blue-400 hover:border-blue-900/50 transition"
