@@ -3,8 +3,8 @@ import { Award, ExternalLink } from 'lucide-react';
 
 export const Sponsors: React.FC = () => {
   const sponsorList = [
-    { name: 'Nipix Technology', tier: 'Title Partner', category: 'App & Web Solutions' },
-    { name: 'SquareShift Technologies', tier: 'Event Sponsor', category: 'Cloud & AI Infrastructure' },
+    { name: 'Quantum ARC', tier: 'Technology Partner', category: 'App & Web Solutions' },
+    
   ];
 
   return (
