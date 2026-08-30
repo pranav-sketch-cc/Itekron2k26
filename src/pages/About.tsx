@@ -31,7 +31,7 @@ export const About: React.FC = () => {
           </span>
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 max-w-lg leading-relaxed">
-          Welcome to <strong className="text-slate-200">ITEKRON 2K26</strong>, organized by the Department of Information Technology at <strong className="text-slate-200">Chennai Institute of Technology</strong>.
+          Welcome to <strong className="text-slate-200">ITEKRON 2K26</strong>, organized by the Department of Information Technology at <strong className="text-slate-200">New Prince Shri Bhavani College</strong>.
           Where innovation meets competition, we bridge the gap between emerging tech and technical mastery.
         </p>
       </section>
@@ -74,7 +74,7 @@ export const About: React.FC = () => {
             The Organizing <span className="text-red-500">Team</span>
           </h2>
           <p className="text-xs text-slate-400 max-w-md">
-            The dedicated visionaries from the IT Department of Chennai Institute of Technology making ITEKRON 2K26 a reality.
+            The dedicated visionaries from the IT Department of New Prince Shri Bhavani College making ITEKRON 2K26 a reality.
           </p>
         </div>
 
