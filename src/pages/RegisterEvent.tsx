@@ -121,65 +121,113 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
 
     try {
       const isTeam = event.team_type?.toLowerCase() === 'team';
-      const amount = event.id === 'CONVERA01' ? 150 : 50;
 
-      // 1. Create registration record in Supabase (status: pending)
+      // 1. Create base registration record (NO amount column referenced)
       const { data: registration, error: regErr } = await supabase
         .from('registrations')
         .insert([
           {
             user_id: user.id,
             event_id: event.id,
+            registration_type: isTeam ? 'team' : 'individual',
             status: 'pending',
-            amount: amount,
-            full_name: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            college: formData.college,
-            department: formData.department,
-            year: formData.year,
-            food_preference: formData.foodPreference,
-            team_name: isTeam ? formData.teamName : null,
+            payment_required: true,
+            payment_status: 'pending',
+            participant_email: formData.email
           }
         ])
         .select()
         .single();
 
       if (regErr || !registration) {
-        throw new Error(regErr?.message || 'Failed to create registration record.');
+        throw new Error(regErr?.message || 'Failed to initialize registration record.');
       }
 
-      // If team event, insert team members into database
-      if (isTeam && teamMembers.length > 0) {
-        const teamRows = teamMembers.map(member => ({
-          registration_id: registration.id,
-          name: member.name,
-          email: member.email,
-          phone: member.phone,
-          department: member.department,
-          year: member.year
-        }));
+      // 2. Insert into appropriate relational tables based on event type
+      if (isTeam) {
+        // Insert Team
+        const { data: team, error: teamErr } = await supabase
+          .from('teams')
+          .insert([
+            {
+              registration_id: registration.id,
+              team_name: formData.teamName,
+              leader_name: formData.fullName,
+              leader_email: formData.email,
+              leader_phone: formData.phone,
+              college_name: formData.college,
+              department: formData.department,
+              year_of_study: formData.year,
+              food_preference: formData.foodPreference
+            }
+          ])
+          .select()
+          .single();
 
-        await supabase.from('team_members').insert(teamRows);
+        if (teamErr || !team) {
+          throw new Error(teamErr?.message || 'Failed to create team record.');
+        }
+
+        // Insert Team Members
+        if (teamMembers.length > 0) {
+          const memberRows = teamMembers.map(m => ({
+            team_id: team.id,
+            name: m.name,
+            email: m.email,
+            phone: m.phone,
+            department: m.department,
+            year: m.year
+          }));
+
+          const { error: membersErr } = await supabase.from('team_members').insert(memberRows);
+          if (membersErr) {
+            console.error('Error adding team members:', membersErr);
+          }
+        }
+      } else {
+        // Insert Individual Participant
+        const { error: partErr } = await supabase
+          .from('participants')
+          .insert([
+            {
+              registration_id: registration.id,
+              full_name: formData.fullName,
+              email: formData.email,
+              phone: formData.phone,
+              college_name: formData.college,
+              department: formData.department,
+              year_of_study: formData.year,
+              food_preference: formData.foodPreference
+            }
+          ]);
+
+        if (partErr) {
+          throw new Error(partErr.message || 'Failed to create participant record.');
+        }
       }
 
-      // 2. Call backend Razorpay order API endpoint
+      // 3. Create Razorpay order server-side
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           registrationId: registration.id,
-          eventId: event.id,
-          amount: amount
+          eventId: event.id
         })
       });
 
       const orderData = await orderRes.json();
       if (!orderRes.ok || !orderData.orderId) {
-        throw new Error(orderData.message || 'Failed to initialize payment gateway.');
+        throw new Error(orderData.message || 'Failed to generate payment order.');
       }
 
-      // 3. Open Razorpay Checkout modal
+      // Save razorpay_order_id to registration record
+      await supabase
+        .from('registrations')
+        .update({ razorpay_order_id: orderData.orderId })
+        .eq('id', registration.id);
+
+      // 4. Open Razorpay Checkout Modal
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.key,
         amount: orderData.amount,
@@ -189,7 +237,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
         order_id: orderData.orderId,
         handler: async (response: any) => {
           try {
-            // 4. Verify payment server-side
+            // 5. Verify payment HMAC signature server-side
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -284,7 +332,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Team Details Section (If Team Event) */}
+        {/* Team Details Section */}
         {isTeam && (
           <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-4">
             <h3 className="text-sm font-bold text-red-400 uppercase font-mono">Team Information</h3>
@@ -407,7 +455,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
           </div>
         </div>
 
-        {/* Team Members Section (For Team Events) */}
+        {/* Team Members Section */}
         {isTeam && (
           <div className="space-y-4 pt-4 border-t border-slate-800">
             <div className="flex justify-between items-center">
