@@ -1,106 +1,314 @@
-/// <reference types="node" />
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Buffer } from 'buffer';
-import crypto from 'crypto';
-import { supabaseAdmin } from './_lib/supabaseAdmin';
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
+const webhookSecret =
+  process.env.RAZORPAY_WEBHOOK_SECRET;
 
-async function getRawBody(req: VercelRequest): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', (err: any) => reject(err));
-  });
+if (
+  !supabaseUrl ||
+  !supabaseServiceRoleKey ||
+  !webhookSecret
+) {
+  throw new Error(
+    "Required webhook environment variables are missing"
+  );
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+const supabaseAdmin = createClient(
+  supabaseUrl,
+  supabaseServiceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
   }
+);
 
-  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  const razorpaySignature = req.headers['x-razorpay-signature'] as string;
-
-  if (!webhookSecret || !razorpaySignature) {
-    return res.status(400).json({ error: 'Missing webhook secret or signature header' });
-  }
-
-  let rawBodyBuffer: Buffer;
-  try {
-    rawBodyBuffer = await getRawBody(req);
-  } catch (err: any) {
-    return res.status(400).json({ error: 'Failed to read raw request body' });
-  }
-
+function verifyWebhookSignature(
+  rawBody: string,
+  signature: string
+): boolean {
   const expectedSignature = crypto
-    .createHmac('sha256', webhookSecret)
-    .update(rawBodyBuffer)
-    .digest('hex');
+    .createHmac("sha256", webhookSecret!)
+    .update(rawBody)
+    .digest("hex");
 
-  if (expectedSignature !== razorpaySignature) {
-    return res.status(400).json({ error: 'Invalid webhook signature' });
+  if (expectedSignature.length !== signature.length) {
+    return false;
   }
 
-  let eventPayload: any;
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature),
+    Buffer.from(signature)
+  );
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method not allowed",
+    });
+  }
+
   try {
-    eventPayload = JSON.parse(rawBodyBuffer.toString('utf8'));
-  } catch (err: any) {
-    return res.status(400).json({ error: 'Invalid JSON payload' });
-  }
+    /*
+     * ---------------------------------------------------------
+     * Razorpay webhook signature must be generated from the
+     * RAW request body.
+     * ---------------------------------------------------------
+     */
 
-  const eventType = eventPayload?.event;
+    const signature =
+      req.headers["x-razorpay-signature"];
 
-  if (eventType === 'payment.captured' || eventType === 'order.paid') {
-    try {
-      const paymentEntity = eventPayload?.payload?.payment?.entity;
-      const orderId = paymentEntity?.order_id;
-      const paymentId = paymentEntity?.id;
+    if (!signature || Array.isArray(signature)) {
+      return res.status(400).json({
+        error: "Missing Razorpay webhook signature",
+      });
+    }
 
-      if (!orderId || !paymentId) {
-        return res.status(200).json({ status: 'ignored', message: 'Missing order_id or payment_id' });
-      }
+    const rawBody =
+      typeof req.body === "string"
+        ? req.body
+        : JSON.stringify(req.body);
 
-      const { data: reg, error: fetchErr } = await supabaseAdmin
-        .from('registrations')
-        .select('id, event_id, payment_status')
-        .eq('razorpay_order_id', orderId)
+    /*
+     * ---------------------------------------------------------
+     * 1. Verify Razorpay webhook signature
+     * ---------------------------------------------------------
+     */
+    const valid = verifyWebhookSignature(
+      rawBody,
+      signature
+    );
+
+    if (!valid) {
+      return res.status(400).json({
+        error: "Invalid webhook signature",
+      });
+    }
+
+    const payload =
+      typeof req.body === "string"
+        ? JSON.parse(req.body)
+        : req.body;
+
+    const event = payload?.event;
+
+    /*
+     * ---------------------------------------------------------
+     * 2. We only care about successful captured payments
+     * ---------------------------------------------------------
+     */
+    if (event !== "payment.captured") {
+      return res.status(200).json({
+        received: true,
+        ignored: true,
+        event,
+      });
+    }
+
+    const payment =
+      payload?.payload?.payment?.entity;
+
+    if (!payment) {
+      return res.status(400).json({
+        error: "Payment entity missing from webhook",
+      });
+    }
+
+    const paymentId = payment.id;
+    const orderId = payment.order_id;
+    const amount = payment.amount;
+    const currency = payment.currency;
+    const paymentStatus = payment.status;
+
+    if (!paymentId || !orderId) {
+      return res.status(400).json({
+        error: "Payment ID or order ID missing",
+      });
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 3. Only accept captured INR payments
+     * ---------------------------------------------------------
+     */
+    if (
+      paymentStatus !== "captured" ||
+      currency !== "INR"
+    ) {
+      return res.status(400).json({
+        error: "Invalid captured payment payload",
+      });
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 4. Find existing registration using Razorpay order ID
+     * ---------------------------------------------------------
+     */
+    const { data: registration, error: registrationError } =
+      await supabaseAdmin
+        .from("registrations")
+        .select(`
+          id,
+          registration_id,
+          event_id,
+          registration_type,
+          status,
+          payment_required,
+          payment_status,
+          participant_email,
+          razorpay_order_id,
+          razorpay_payment_id
+        `)
+        .eq("razorpay_order_id", orderId)
         .single();
 
-      if (fetchErr || !reg) {
-        return res.status(200).json({ status: 'not_found', message: 'Registration record not found' });
-      }
+    if (registrationError || !registration) {
+      console.error(
+        "Registration not found for webhook order:",
+        orderId,
+        registrationError
+      );
 
-      if (reg.payment_status === 'completed') {
-        return res.status(200).json({ status: 'already_completed', message: 'Payment already processed' });
-      }
+      /*
+       * Return 200 so Razorpay does not endlessly retry a webhook
+       * for an order that our database does not know.
+       */
+      return res.status(200).json({
+        received: true,
+        processed: false,
+        reason: "registration_not_found",
+      });
+    }
 
-      const isConvera = String(reg.event_id).toLowerCase().includes('convera');
-      const amountPaid = isConvera ? 150 : 50;
+    /*
+     * ---------------------------------------------------------
+     * 5. Server-side expected amount validation
+     *
+     * Normal = ₹50
+     * Convera = ₹150
+     * ---------------------------------------------------------
+     */
+    const expectedAmount =
+      registration.event_id === "CONVERA01"
+        ? 15000
+        : 5000;
 
-      const { error: updateErr } = await supabaseAdmin
-        .from('registrations')
+    if (amount !== expectedAmount) {
+      console.error(
+        "Webhook amount mismatch",
+        {
+          orderId,
+          paymentId,
+          receivedAmount: amount,
+          expectedAmount,
+          eventId: registration.event_id,
+        }
+      );
+
+      return res.status(400).json({
+        error: "Webhook payment amount mismatch",
+      });
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 6. Idempotency
+     *
+     * Razorpay can retry the same webhook.
+     *
+     * If already paid with the same payment ID,
+     * simply acknowledge it.
+     * ---------------------------------------------------------
+     */
+    if (
+      registration.payment_status === "paid" &&
+      registration.status === "confirmed" &&
+      registration.razorpay_payment_id === paymentId
+    ) {
+      return res.status(200).json({
+        received: true,
+        processed: true,
+        already_processed: true,
+        registration_id:
+          registration.registration_id,
+      });
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 7. Confirm the EXISTING registration
+     *
+     * IMPORTANT:
+     * We are NOT creating another registration.
+     * ---------------------------------------------------------
+     */
+    const { data: updatedRegistration, error: updateError } =
+      await supabaseAdmin
+        .from("registrations")
         .update({
-          payment_status: 'completed',
-          amount_paid: amountPaid,
+          payment_status: "paid",
+          status: "confirmed",
           razorpay_payment_id: paymentId,
         })
-        .eq('id', reg.id);
+        .eq("id", registration.id)
+        .eq("razorpay_order_id", orderId)
+        .select(`
+          id,
+          registration_id,
+          event_id,
+          status,
+          payment_status,
+          razorpay_order_id,
+          razorpay_payment_id
+        `)
+        .single();
 
-      if (updateErr) {
-        return res.status(500).json({ error: 'Database update failed' });
-      }
+    if (updateError || !updatedRegistration) {
+      console.error(
+        "Webhook registration update failed:",
+        updateError
+      );
 
-      return res.status(200).json({ status: 'success', message: 'Registration status updated to completed' });
-    } catch (err: any) {
-      return res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({
+        error: "Failed to update registration",
+      });
     }
-  }
 
-  return res.status(200).json({ status: 'ignored', message: 'Event type ignored' });
+    /*
+     * ---------------------------------------------------------
+     * 8. Success
+     * ---------------------------------------------------------
+     */
+    return res.status(200).json({
+      received: true,
+      processed: true,
+      registration_id:
+        updatedRegistration.registration_id,
+      payment_id:
+        updatedRegistration.razorpay_payment_id,
+    });
+  } catch (error: any) {
+    console.error(
+      "Razorpay webhook error:",
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        error?.message ||
+        "Webhook processing failed",
+    });
+  }
 }
