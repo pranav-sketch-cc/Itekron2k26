@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
               </div>
             </Link>
             <p className="leading-relaxed max-w-sm">
-              ITEKRON 2K26 is the national level technical symposium organized by the Department of IT, CIT, where innovation meets fierce competition.
+              ITEKRON 2K26 is the national level technical symposium organized by the Department of Information Technology, where innovation meets fierce competition.
             </p>
           </div>
 
