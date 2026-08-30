@@ -14,7 +14,6 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import { MyRegistrations } from './pages/MyRegistrations';
 
-// Global Layout component ensuring consistent Navbar and Footer rendering across pages
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-white">
@@ -39,7 +38,6 @@ export function App() {
         <Route path="/login" component={Login} />
         <Route path="/signup" component={SignUp} />
         <Route path="/my-registrations" component={MyRegistrations} />
-        {/* Fallback route */}
         <Route component={Home} />
       </Switch>
     </AppLayout>
