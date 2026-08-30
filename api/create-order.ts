@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Razorpay from 'razorpay';
-import { supabaseAdmin } from './_lib/supabaseAdmin';
+import { supabaseAdmin } from './_lib/supabaseAdmin.js';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || '',
