@@ -4,12 +4,14 @@ import { useLocation } from 'wouter';
 export interface EventCardProps {
   event: {
     id: string;
-    title: string;
+    name: string;
     description?: string;
     category?: string;
-    date?: string;
+    type?: string;
+    team_type?: string;
+    team_size?: string;
+    date_time?: string;
     venue?: string;
-    registration_type?: string;
   };
 }
 
@@ -22,8 +24,9 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
     }
   };
 
-  const isConvera = String(event.id).toLowerCase().includes('convera');
+  const isConvera = event.id === 'CONVERA01';
   const price = isConvera ? '₹150' : '₹50';
+  const isTeam = event.team_type?.toLowerCase() === 'team';
 
   return (
     <div className="spider-card p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md flex flex-col justify-between">
@@ -33,10 +36,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
             {event.category || 'Technical'}
           </span>
           <span className="text-xs font-mono text-slate-400">
-            {event.registration_type?.toLowerCase() === 'team' ? 'Team Event' : 'Individual'}
+            {isTeam ? 'Team Event' : 'Individual'}
           </span>
         </div>
-        <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
+        <h3 className="text-xl font-bold text-white mb-2">{event.name}</h3>
         <p className="text-slate-400 text-xs line-clamp-2 mb-4">
           {event.description || 'No description provided.'}
         </p>

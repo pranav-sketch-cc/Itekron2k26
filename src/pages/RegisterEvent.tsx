@@ -3,16 +3,22 @@ import { useRoute, useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
-export const RegisterEvent: React.FC = () => {
+export const RegisterEvent: React.FC<any> = ({ event: initialEvent, onClose }) => {
   const [match1, params1] = useRoute('/events/:eventId/register');
   const [match2, params2] = useRoute('/events/:id/register');
   const [, setLocation] = useLocation();
 
   const eventId = params1?.eventId || params2?.id;
-  const [event, setEvent] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState<any>(initialEvent || null);
+  const [loading, setLoading] = useState(!initialEvent);
 
   useEffect(() => {
+    if (initialEvent) {
+      setEvent(initialEvent);
+      setLoading(false);
+      return;
+    }
+
     if (!eventId) {
       setLoading(false);
       return;
@@ -20,6 +26,7 @@ export const RegisterEvent: React.FC = () => {
 
     const fetchEvent = async () => {
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('events')
           .select('*')
@@ -37,7 +44,17 @@ export const RegisterEvent: React.FC = () => {
     };
 
     fetchEvent();
-  }, [eventId]);
+  }, [eventId, initialEvent]);
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else if (event?.id) {
+      setLocation(`/events/${event.id}`);
+    } else {
+      setLocation('/events');
+    }
+  };
 
   if (loading) {
     return (
@@ -51,30 +68,39 @@ export const RegisterEvent: React.FC = () => {
     return (
       <div className="min-h-screen pt-24 text-center text-white">
         <p className="text-red-500 mb-4">Event not found.</p>
-        <button onClick={() => setLocation('/events')} className="spider-button-primary px-4 py-2 text-xs font-bold rounded-xl">
+        <button
+          onClick={() => setLocation('/events')}
+          className="spider-button-primary px-4 py-2 text-xs font-bold rounded-xl"
+        >
           Back to Events
         </button>
       </div>
     );
   }
 
-  const isConvera = String(event.id).toLowerCase().includes('convera');
+  const isConvera = event.id === 'CONVERA01';
   const displayPrice = isConvera ? '₹150' : '₹50';
+  const isTeam = event.team_type?.toLowerCase() === 'team';
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 max-w-2xl mx-auto text-white">
-      <button
-        onClick={() => setLocation(`/events/${event.id}`)}
-        className="mb-6 text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-2"
-      >
-        ← Back to Event Details
-      </button>
+    <div className="spider-card p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-md text-white">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">{event.name}</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Type: <span className="text-slate-200">{isTeam ? 'Team Event' : 'Individual'}</span> | Fee: <span className="text-red-400 font-bold">{displayPrice}</span>
+          </p>
+        </div>
+        <button
+          onClick={handleClose}
+          className="text-slate-400 hover:text-white text-xs font-bold px-3 py-1 bg-slate-800 rounded-lg"
+        >
+          ✕ Close
+        </button>
+      </div>
 
-      <div className="spider-card p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur-md">
-        <h1 className="text-2xl font-bold text-white mb-2">Register for {event.title}</h1>
-        <p className="text-slate-400 text-xs mb-6">Registration Fee: <span className="text-red-400 font-bold">{displayPrice}</span></p>
-
-        {/* Existing registration form elements continue here */}
+      <div className="space-y-4 text-xs text-slate-300">
+        <p>{event.description}</p>
       </div>
     </div>
   );

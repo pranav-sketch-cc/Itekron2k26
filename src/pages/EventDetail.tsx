@@ -26,17 +26,23 @@ export const EventDetail: React.FC = () => {
     const fetchEvent = async () => {
       try {
         setLoading(true);
+        setError(null);
+
         const { data, error: fetchErr } = await supabase
           .from('events')
           .select('*')
           .eq('id', eventId)
           .single();
 
-        if (fetchErr || !data) throw fetchErr || new Error('Event not found');
+        if (fetchErr || !data) {
+          console.error('Supabase query error:', fetchErr);
+          throw new Error('Event not found');
+        }
+
         setEvent(data);
       } catch (err: any) {
-        console.error('Error fetching event details:', err);
-        setError('Event not found or failed to load.');
+        console.error('Error loading event:', err);
+        setError('Event not found.');
       } finally {
         setLoading(false);
       }
@@ -64,7 +70,7 @@ export const EventDetail: React.FC = () => {
   if (error || !event) {
     return (
       <div className="min-h-screen pt-24 text-center px-4">
-        <h2 className="text-2xl font-bold text-red-500 mb-4">{error || 'Event not found'}</h2>
+        <h2 className="text-2xl font-bold text-red-500 mb-4">{error || 'Event not found.'}</h2>
         <button
           onClick={() => setLocation('/events')}
           className="spider-button-primary px-6 py-2 rounded-xl text-xs font-bold"
@@ -75,9 +81,8 @@ export const EventDetail: React.FC = () => {
     );
   }
 
-  const isConvera = String(event.id).toLowerCase().includes('convera');
+  const isConvera = event.id === 'CONVERA01';
   const displayPrice = isConvera ? '₹150' : '₹50';
-  const isTeamEvent = event.registration_type?.toLowerCase() === 'team' || event.is_team;
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-white">
@@ -96,10 +101,10 @@ export const EventDetail: React.FC = () => {
                 {event.category || 'Technical'}
               </span>
               <span className="text-xs font-mono px-3 py-1 bg-slate-800 border border-slate-700 text-slate-300 rounded-full">
-                {isTeamEvent ? 'Team Event' : 'Individual Event'}
+                {event.type || 'Event'}
               </span>
             </div>
-            <h1 className="text-3xl font-bold mt-3">{event.title}</h1>
+            <h1 className="text-3xl font-bold mt-3">{event.name}</h1>
           </div>
 
           <button
@@ -110,20 +115,22 @@ export const EventDetail: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 my-8 py-6 border-y border-slate-800/80 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 my-8 py-6 border-y border-slate-800/80 text-sm">
           <div>
             <p className="text-slate-400 text-xs uppercase font-mono">Date & Time</p>
-            <p className="font-semibold text-slate-200 mt-1">
-              {event.date ? new Date(event.date).toLocaleDateString() : 'TBA'}
-            </p>
+            <p className="font-semibold text-slate-200 mt-1">{event.date_time || 'TBA'}</p>
           </div>
           <div>
             <p className="text-slate-400 text-xs uppercase font-mono">Venue</p>
-            <p className="font-semibold text-slate-200 mt-1">{event.venue || 'Campus Auditorium'}</p>
+            <p className="font-semibold text-slate-200 mt-1">{event.venue || 'Campus'}</p>
           </div>
           <div>
-            <p className="text-slate-400 text-xs uppercase font-mono">Type</p>
-            <p className="font-semibold text-slate-200 mt-1 capitalize">{isTeamEvent ? 'Team' : 'Individual'}</p>
+            <p className="text-slate-400 text-xs uppercase font-mono">Team Type</p>
+            <p className="font-semibold text-slate-200 mt-1">{event.team_type || 'Individual'}</p>
+          </div>
+          <div>
+            <p className="text-slate-400 text-xs uppercase font-mono">Team Size</p>
+            <p className="font-semibold text-slate-200 mt-1">{event.team_size || 'Individual Participation'}</p>
           </div>
           <div>
             <p className="text-slate-400 text-xs uppercase font-mono">Registration Fee</p>
@@ -137,16 +144,15 @@ export const EventDetail: React.FC = () => {
             <p>{event.description || 'No detailed description available.'}</p>
           </div>
 
-          {event.rules && (
+          {event.rules_regulations && (
             <div>
               <h3 className="text-lg font-bold text-white mb-2">Rules & Guidelines</h3>
-              <p className="whitespace-pre-line text-slate-400">{event.rules}</p>
+              <p className="whitespace-pre-line text-slate-400">{event.rules_regulations}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Render existing RegisterEvent component as overlay when opened */}
       {isRegisterModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
           <div className="relative max-w-2xl mx-auto">
@@ -156,7 +162,7 @@ export const EventDetail: React.FC = () => {
             >
               ✕ Close
             </button>
-            <RegisterEvent />
+            <RegisterEvent event={event} onClose={() => setIsRegisterModalOpen(false)} />
           </div>
         </div>
       )}
