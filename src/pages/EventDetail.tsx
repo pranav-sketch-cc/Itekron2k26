@@ -71,6 +71,9 @@ export const EventDetail: React.FC = () => {
     );
   }
 
+  const isConvera = String(event.id).toLowerCase().includes('convera');
+  const displayPrice = isConvera ? '₹150' : '₹50';
+
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-white">
       <button
@@ -110,9 +113,7 @@ export const EventDetail: React.FC = () => {
           </div>
           <div>
             <p className="text-slate-400 text-xs uppercase font-mono">Registration Fee</p>
-            <p className="font-semibold text-red-400 mt-1">
-              {String(event.id).toLowerCase().includes('convera') ? '₹150' : '₹50'}
-            </p>
+            <p className="font-semibold text-red-400 mt-1">{displayPrice}</p>
           </div>
         </div>
 
