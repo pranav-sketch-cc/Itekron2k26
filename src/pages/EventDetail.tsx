@@ -17,7 +17,7 @@ export const EventDetail: React.FC = () => {
   useEffect(() => {
     if (!eventId) return;
 
-    const fetchEventDetails = async () => {
+    const fetchEvent = async () => {
       try {
         setLoading(true);
         const { data, error: fetchErr } = await supabase
@@ -36,18 +36,15 @@ export const EventDetail: React.FC = () => {
       }
     };
 
-    fetchEventDetails();
+    fetchEvent();
   }, [eventId]);
 
   const handleRegisterClick = () => {
     if (!user) {
-      // Redirect to login if user is not authenticated
       setLocation('/login');
       return;
     }
-
     if (eventId) {
-      // Navigate to the standalone registration page route
       setLocation(`/events/${eventId}/register`);
     }
   };
