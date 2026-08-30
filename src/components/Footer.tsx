@@ -17,13 +17,13 @@ export const Footer: React.FC = () => {
           {/* Logo & Info (1st Col) */}
           <div className="space-y-4 md:col-span-1">
             <Link href="/" className="flex items-center space-x-3 group">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 p-1 rounded-xl bg-red-950/40 border border-red-900/40 flex items-center justify-center group-hover:border-red-500/80 transition duration-300 flex-shrink-0">
-                <img
-                  src={logoImg}
-                  alt="ITEKRON 2K26 Emblem"
-                  className="w-full h-full object-contain transform group-hover:scale-110 transition duration-300"
-                />
-              </div>
+             <div className="h-12 sm:h-16 w-auto flex items-center justify-center bg-transparent flex-shrink-0">
+              <img
+                src={logoImg}
+                alt="ITEKRON 2K26 Emblem"
+                className="h-full w-auto object-contain transform group-hover:scale-105 transition duration-300"
+              />
+            </div>
               <div>
                 <span className="text-xl font-black tracking-wider text-white flex items-center gap-1 leading-none">
                   ITEKRON <span className="text-red-500 text-xs font-mono font-bold bg-red-950/80 px-2 py-0.5 rounded-full border border-red-900/60 leading-tight">2K26</span>
