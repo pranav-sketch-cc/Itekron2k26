@@ -1,63 +1,55 @@
 import React from 'react';
-import { Link } from 'wouter';
-import { Event } from '../types/database';
-import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react';
-import { formatDate } from '../lib/utils';
+import { useLocation } from 'wouter';
 
-interface EventCardProps {
-  event: Event;
+export interface EventCardProps {
+  event: {
+    id: string;
+    title: string;
+    description?: string;
+    category?: string;
+    date?: string;
+    venue?: string;
+    registration_type?: string;
+  };
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event }) => {
-  // Use exact logic as EventDetail.tsx (the reference implementation)
-  const rawType = (event.event_type || event.team_type || '').toLowerCase();
-  const numericTeamSize = Number(event.max_team_size || event.team_size || 1);
+  const [, setLocation] = useLocation();
 
-  let typeLabel = 'Individual';
-  if (rawType === 'both') {
-    typeLabel = 'Individual & Team';
-  } else if (rawType === 'team' || numericTeamSize > 1) {
-    typeLabel = `Team (${numericTeamSize})`;
-  } else if (rawType === 'individual') {
-    typeLabel = 'Individual';
-  }
+  const handleViewDetails = () => {
+    if (event?.id) {
+      setLocation(`/events/${event.id}`);
+    }
+  };
+
+  const isConvera = String(event.id).toLowerCase().includes('convera');
+  const price = isConvera ? '₹150' : '₹50';
 
   return (
-    <div className="spider-card p-6 rounded-3xl flex flex-col justify-between border-slate-800 space-y-5">
-      <div className="space-y-3">
-        <div className="flex justify-between items-center text-[10px]">
-          <span className="font-bold uppercase tracking-wider text-red-400 bg-red-950/60 px-2.5 py-1 rounded-full border border-red-900/40">
-            {event.category || 'Symposium'}
+    <div className="spider-card p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md flex flex-col justify-between">
+      <div>
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-xs font-mono px-2.5 py-0.5 bg-red-950/80 border border-red-800 text-red-400 rounded-full">
+            {event.category || 'Technical'}
           </span>
-          <span className="text-slate-300 flex items-center space-x-1 font-semibold bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800">
-            <Users className="w-3 h-3 text-blue-400" />
-            <span>{typeLabel}</span>
+          <span className="text-xs font-mono text-slate-400">
+            {event.registration_type?.toLowerCase() === 'team' ? 'Team Event' : 'Individual'}
           </span>
         </div>
-
-        <h2 className="text-xl font-bold text-white leading-snug">{event.name}</h2>
-        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{event.description}</p>
+        <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
+        <p className="text-slate-400 text-xs line-clamp-2 mb-4">
+          {event.description || 'No description provided.'}
+        </p>
       </div>
 
-      <div className="space-y-4 pt-2 border-t border-slate-800/80">
-        <div className="space-y-1.5 text-xs text-slate-300">
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-            <span>{formatDate(event.date_time)}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-            <span>{event.venue || 'TBA'}</span>
-          </div>
-        </div>
-
-        <Link
-          href={`/events/${event.id}`}
-          className="spider-button-primary w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs font-bold"
+      <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+        <span className="text-red-400 font-bold text-sm">{price}</span>
+        <button
+          onClick={handleViewDetails}
+          className="spider-button-primary px-4 py-2 rounded-xl text-xs font-bold"
         >
-          <span>View Details</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+          View Details
+        </button>
       </div>
     </div>
   );

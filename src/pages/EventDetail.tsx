@@ -3,6 +3,7 @@ import { useRoute, useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import RegisterEvent from './RegisterEvent';
 
 export const EventDetail: React.FC = () => {
   const [, params] = useRoute('/events/:id');
@@ -13,9 +14,14 @@ export const EventDetail: React.FC = () => {
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId) {
+      setLoading(false);
+      setError('Invalid event link.');
+      return;
+    }
 
     const fetchEvent = async () => {
       try {
@@ -26,7 +32,7 @@ export const EventDetail: React.FC = () => {
           .eq('id', eventId)
           .single();
 
-        if (fetchErr) throw fetchErr;
+        if (fetchErr || !data) throw fetchErr || new Error('Event not found');
         setEvent(data);
       } catch (err: any) {
         console.error('Error fetching event details:', err);
@@ -44,9 +50,7 @@ export const EventDetail: React.FC = () => {
       setLocation('/login');
       return;
     }
-    if (eventId) {
-      setLocation(`/events/${eventId}/register`);
-    }
+    setIsRegisterModalOpen(true);
   };
 
   if (loading) {
@@ -73,6 +77,7 @@ export const EventDetail: React.FC = () => {
 
   const isConvera = String(event.id).toLowerCase().includes('convera');
   const displayPrice = isConvera ? '₹150' : '₹50';
+  const isTeamEvent = event.registration_type?.toLowerCase() === 'team' || event.is_team;
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-white">
@@ -86,10 +91,15 @@ export const EventDetail: React.FC = () => {
       <div className="spider-card p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <span className="text-xs font-mono px-3 py-1 bg-red-950/80 border border-red-800 text-red-400 rounded-full">
-              {event.category || 'Technical'}
-            </span>
-            <h1 className="text-3xl font-bold mt-2">{event.title}</h1>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono px-3 py-1 bg-red-950/80 border border-red-800 text-red-400 rounded-full">
+                {event.category || 'Technical'}
+              </span>
+              <span className="text-xs font-mono px-3 py-1 bg-slate-800 border border-slate-700 text-slate-300 rounded-full">
+                {isTeamEvent ? 'Team Event' : 'Individual Event'}
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold mt-3">{event.title}</h1>
           </div>
 
           <button
@@ -100,7 +110,7 @@ export const EventDetail: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8 py-6 border-y border-slate-800/80 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 my-8 py-6 border-y border-slate-800/80 text-sm">
           <div>
             <p className="text-slate-400 text-xs uppercase font-mono">Date & Time</p>
             <p className="font-semibold text-slate-200 mt-1">
@@ -112,16 +122,44 @@ export const EventDetail: React.FC = () => {
             <p className="font-semibold text-slate-200 mt-1">{event.venue || 'Campus Auditorium'}</p>
           </div>
           <div>
+            <p className="text-slate-400 text-xs uppercase font-mono">Type</p>
+            <p className="font-semibold text-slate-200 mt-1 capitalize">{isTeamEvent ? 'Team' : 'Individual'}</p>
+          </div>
+          <div>
             <p className="text-slate-400 text-xs uppercase font-mono">Registration Fee</p>
             <p className="font-semibold text-red-400 mt-1">{displayPrice}</p>
           </div>
         </div>
 
-        <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
-          <h3 className="text-lg font-bold text-white">Event Overview</h3>
-          <p>{event.description || 'No detailed description available.'}</p>
+        <div className="space-y-6 text-slate-300 text-sm leading-relaxed">
+          <div>
+            <h3 className="text-lg font-bold text-white mb-2">Event Overview</h3>
+            <p>{event.description || 'No detailed description available.'}</p>
+          </div>
+
+          {event.rules && (
+            <div>
+              <h3 className="text-lg font-bold text-white mb-2">Rules & Guidelines</h3>
+              <p className="whitespace-pre-line text-slate-400">{event.rules}</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Render existing RegisterEvent component as overlay when opened */}
+      {isRegisterModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
+          <div className="relative max-w-2xl mx-auto">
+            <button
+              onClick={() => setIsRegisterModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white text-sm font-bold z-10"
+            >
+              ✕ Close
+            </button>
+            <RegisterEvent />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
