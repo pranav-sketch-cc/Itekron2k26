@@ -35,13 +35,13 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
     college: '',
     department: '',
     year: '1',
-    foodPreference: 'Veg',
+    foodPreference: 'Vegetarian',
     teamName: '',
   });
 
   // Team Members State (for Team Events)
   const [teamMembers, setTeamMembers] = useState([
-    { name: '', email: '', phone: '', department: '', year: '1' }
+    { name: '', email: '', phone: '', department: '', year: '1', foodPreference: 'Vegetarian' }
   ]);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
   }, [eventId, initialEvent]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.value ? e.target.name : e.target.name]: e.target.value });
   };
 
   const handleTeamMemberChange = (index: number, field: string, value: string) => {
@@ -92,7 +92,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
   };
 
   const addTeamMember = () => {
-    setTeamMembers([...teamMembers, { name: '', email: '', phone: '', department: '', year: '1' }]);
+    setTeamMembers([...teamMembers, { name: '', email: '', phone: '', department: '', year: '1', foodPreference: 'Vegetarian' }]);
   };
 
   const removeTeamMember = (index: number) => {
@@ -122,7 +122,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
     try {
       const isTeam = event.team_type?.toLowerCase() === 'team';
 
-      // 1. Create base registration record (NO amount column referenced)
+      // 1. Insert into public.registrations using ONLY valid schema columns
+      // (NO amount, NO college_name, NO amount_paid)
       const { data: registration, error: regErr } = await supabase
         .from('registrations')
         .insert([
@@ -136,67 +137,77 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
             participant_email: formData.email
           }
         ])
-        .select()
+        .select('id')
         .single();
 
       if (regErr || !registration) {
-        throw new Error(regErr?.message || 'Failed to initialize registration record.');
+        throw new Error(regErr?.message || 'Failed to create registration record.');
       }
 
-      // 2. Insert into appropriate relational tables based on event type
+      const registrationUUID = registration.id;
+
       if (isTeam) {
-        // Insert Team
+        // 2a. Insert into public.teams using ONLY valid schema columns
         const { data: team, error: teamErr } = await supabase
           .from('teams')
           .insert([
             {
-              registration_id: registration.id,
+              registration_id: registrationUUID,
               team_name: formData.teamName,
-              leader_name: formData.fullName,
-              leader_email: formData.email,
-              leader_phone: formData.phone,
-              college_name: formData.college,
-              department: formData.department,
-              year_of_study: formData.year,
-              food_preference: formData.foodPreference
+              college: formData.college
             }
           ])
-          .select()
+          .select('id')
           .single();
 
         if (teamErr || !team) {
           throw new Error(teamErr?.message || 'Failed to create team record.');
         }
 
-        // Insert Team Members
-        if (teamMembers.length > 0) {
-          const memberRows = teamMembers.map(m => ({
-            team_id: team.id,
+        const teamUUID = team.id;
+
+        // 2b. Insert Team Leader + Members into public.team_members
+        const memberRows = [
+          {
+            team_id: teamUUID,
+            name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            department: formData.department,
+            year: formData.year,
+            food_preference: formData.foodPreference,
+            is_team_leader: true
+          },
+          ...teamMembers.map(m => ({
+            team_id: teamUUID,
             name: m.name,
             email: m.email,
             phone: m.phone,
             department: m.department,
-            year: m.year
-          }));
+            year: m.year,
+            food_preference: m.foodPreference,
+            is_team_leader: false
+          }))
+        ];
 
-          const { error: membersErr } = await supabase.from('team_members').insert(memberRows);
-          if (membersErr) {
-            console.error('Error adding team members:', membersErr);
-          }
+        const { error: membersErr } = await supabase.from('team_members').insert(memberRows);
+        if (membersErr) {
+          throw new Error(membersErr.message || 'Failed to record team members.');
         }
       } else {
-        // Insert Individual Participant
+        // 2c. Insert Individual into public.participants using ONLY valid schema columns:
+        // (name, email, phone, college, department, year, food_preference)
         const { error: partErr } = await supabase
           .from('participants')
           .insert([
             {
-              registration_id: registration.id,
-              full_name: formData.fullName,
+              registration_id: registrationUUID,
+              name: formData.fullName,
               email: formData.email,
               phone: formData.phone,
-              college_name: formData.college,
+              college: formData.college,
               department: formData.department,
-              year_of_study: formData.year,
+              year: formData.year,
               food_preference: formData.foodPreference
             }
           ]);
@@ -211,7 +222,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          registrationId: registration.id,
+          registrationId: registrationUUID,
           eventId: event.id
         })
       });
@@ -221,13 +232,13 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
         throw new Error(orderData.message || 'Failed to generate payment order.');
       }
 
-      // Save razorpay_order_id to registration record
+      // Save razorpay_order_id into registrations
       await supabase
         .from('registrations')
         .update({ razorpay_order_id: orderData.orderId })
-        .eq('id', registration.id);
+        .eq('id', registrationUUID);
 
-      // 4. Open Razorpay Checkout Modal
+      // 4. Trigger Razorpay Checkout Modal
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.key,
         amount: orderData.amount,
@@ -237,7 +248,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
         order_id: orderData.orderId,
         handler: async (response: any) => {
           try {
-            // 5. Verify payment HMAC signature server-side
+            // 5. Server-side payment verification
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -245,7 +256,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                registrationId: registration.id
+                registrationId: registrationUUID
               })
             });
 
@@ -448,8 +459,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
                 required
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-red-600"
               >
-                <option value="Veg">Vegetarian</option>
-                <option value="Non-Veg">Non-Vegetarian</option>
+                <option value="Vegetarian">Vegetarian</option>
+                <option value="Non-Vegetarian">Non-Vegetarian</option>
               </select>
             </div>
           </div>
@@ -473,7 +484,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
               <div key={idx} className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 space-y-3 relative">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono text-slate-400">Member #{idx + 2}</span>
-                  {teamMembers.length > 1 && (
+                  {teamMembers.length > 0 && (
                     <button
                       type="button"
                       onClick={() => removeTeamMember(idx)}
@@ -517,6 +528,26 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({ event: initialEven
                     required
                     className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs"
                   />
+                  <select
+                    value={member.year}
+                    onChange={(e) => handleTeamMemberChange(idx, 'year', e.target.value)}
+                    required
+                    className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs"
+                  >
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                  </select>
+                  <select
+                    value={member.foodPreference}
+                    onChange={(e) => handleTeamMemberChange(idx, 'foodPreference', e.target.value)}
+                    required
+                    className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-white text-xs"
+                  >
+                    <option value="Vegetarian">Vegetarian</option>
+                    <option value="Non-Vegetarian">Non-Vegetarian</option>
+                  </select>
                 </div>
               </div>
             ))}
