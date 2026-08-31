@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
-import { supabaseAdmin } from './_lib/supabaseAdmin';
+import { supabaseAdmin } from './_lib/supabaseAdmin.js';
 
 const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET;
 
