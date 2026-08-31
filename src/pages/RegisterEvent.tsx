@@ -372,7 +372,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
       if (existingRegistration) {
         if (
           existingRegistration.payment_status ===
-          'paid'
+          'completed'
         ) {
           throw new Error(
             'You are already registered and payment is completed for this event.'
