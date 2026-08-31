@@ -120,6 +120,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           .single();
 
         if (fetchErr || !data) {
+          console.error('Event fetch error:', fetchErr);
           setError('Event not found.');
           return;
         }
@@ -339,24 +340,28 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     try {
       /*
        * -------------------------------------------------------
-       * 1. Check for an existing registration
+       * 1. Check existing registration
        * -------------------------------------------------------
        *
-       * This prevents accidental duplicate registrations when
-       * the user clicks Register more than once or retries
-       * after a payment/order problem.
+       * IMPORTANT:
+       * Do NOT use maybeSingle() directly here.
+       *
+       * Old test attempts may have created multiple rows for
+       * the same user + event. We intentionally fetch the
+       * newest row only.
        */
       const {
-        data: existingRegistration,
+        data: existingRegistrations,
         error: existingRegistrationError,
       } = await supabase
         .from('registrations')
         .select(
-          'id, registration_id, status, payment_status, razorpay_order_id'
+          'id, registration_id, status, payment_status, razorpay_order_id, created_at'
         )
         .eq('user_id', user.id)
         .eq('event_id', event.id)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (existingRegistrationError) {
         console.error(
@@ -369,10 +374,24 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         );
       }
 
+      const existingRegistration =
+        existingRegistrations &&
+        existingRegistrations.length > 0
+          ? existingRegistrations[0]
+          : null;
+
+      /*
+       * -------------------------------------------------------
+       * 2. Handle existing registration
+       * -------------------------------------------------------
+       */
       if (existingRegistration) {
+        /*
+         * Payment is already completed.
+         */
         if (
-          existingRegistration.payment_status ===
-          'completed'
+          existingRegistration.payment_status === 'paid' ||
+          existingRegistration.status === 'confirmed'
         ) {
           throw new Error(
             'You are already registered and payment is completed for this event.'
@@ -380,35 +399,38 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         }
 
         /*
-         * Reuse an existing pending/failed registration.
-         * This avoids creating another registration every
-         * time the user retries payment.
+         * Existing pending registration.
+         *
+         * Reuse it instead of inserting another row.
          */
         registrationUUID = existingRegistration.id;
       } else {
         /*
          * -----------------------------------------------------
-         * 2. Create the existing registration record
+         * 3. Create a new registration
          * -----------------------------------------------------
          */
-        const { data: registration, error: regErr } =
-          await supabase
-            .from('registrations')
-            .insert([
-              {
-                user_id: user.id,
-                event_id: event.id,
-                registration_type: isTeam
-                  ? 'team'
-                  : 'individual',
-                status: 'pending',
-                payment_required: true,
-                payment_status: 'pending',
-                participant_email: formData.email.trim(),
-              },
-            ])
-            .select('id, registration_id')
-            .single();
+        const {
+          data: registration,
+          error: regErr,
+        } = await supabase
+          .from('registrations')
+          .insert([
+            {
+              user_id: user.id,
+              event_id: event.id,
+              registration_type: isTeam
+                ? 'team'
+                : 'individual',
+              status: 'pending',
+              payment_required: true,
+              payment_status: 'pending',
+              participant_email:
+                formData.email.trim(),
+            },
+          ])
+          .select('id, registration_id')
+          .single();
 
         if (regErr || !registration) {
           console.error(
@@ -427,22 +449,22 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
       /*
        * -------------------------------------------------------
-       * 3. Check whether participant/team data already exists
+       * 4. Save participant/team information
        * -------------------------------------------------------
-       *
-       * This matters when a user retries payment using an
-       * existing pending registration.
        */
+
       if (isTeam) {
-        const { data: existingTeam, error: existingTeamError } =
-          await supabase
-            .from('teams')
-            .select('id')
-            .eq(
-              'registration_id',
-              registrationUUID
-            )
-            .maybeSingle();
+        const {
+          data: existingTeam,
+          error: existingTeamError,
+        } = await supabase
+          .from('teams')
+          .select('id')
+          .eq(
+            'registration_id',
+            registrationUUID
+          )
+          .maybeSingle();
 
         if (existingTeamError) {
           console.error(
@@ -460,17 +482,15 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         if (existingTeam) {
           teamUUID = existingTeam.id;
 
-          /*
-           * Update team information when retrying.
-           */
-          const { error: teamUpdateError } =
-            await supabase
-              .from('teams')
-              .update({
-                team_name: formData.teamName.trim(),
-                college: formData.college.trim(),
-              })
-              .eq('id', teamUUID);
+          const {
+            error: teamUpdateError,
+          } = await supabase
+            .from('teams')
+            .update({
+              team_name: formData.teamName.trim(),
+              college: formData.college.trim(),
+            })
+            .eq('id', teamUUID);
 
           if (teamUpdateError) {
             throw new Error(
@@ -479,18 +499,20 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
             );
           }
         } else {
-          const { data: team, error: teamErr } =
-            await supabase
-              .from('teams')
-              .insert([
-                {
-                  registration_id: registrationUUID,
-                  team_name: formData.teamName.trim(),
-                  college: formData.college.trim(),
-                },
-              ])
-              .select('id')
-              .single();
+          const {
+            data: team,
+            error: teamErr,
+          } = await supabase
+            .from('teams')
+            .insert([
+              {
+                registration_id: registrationUUID,
+                team_name: formData.teamName.trim(),
+                college: formData.college.trim(),
+              },
+            ])
+            .select('id')
+            .single();
 
           if (teamErr || !team) {
             throw new Error(
@@ -503,17 +525,28 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         }
 
         /*
-         * -----------------------------------------------------
          * Team leader
-         * -----------------------------------------------------
          */
-        const { data: existingLeader } =
-          await supabase
-            .from('team_members')
-            .select('id')
-            .eq('team_id', teamUUID)
-            .eq('is_team_leader', true)
-            .maybeSingle();
+        const {
+          data: existingLeader,
+          error: existingLeaderError,
+        } = await supabase
+          .from('team_members')
+          .select('id')
+          .eq('team_id', teamUUID)
+          .eq('is_team_leader', true)
+          .maybeSingle();
+
+        if (existingLeaderError) {
+          console.error(
+            'Existing team leader lookup error:',
+            existingLeaderError
+          );
+
+          throw new Error(
+            'Unable to check team leader information.'
+          );
+        }
 
         const leaderData = {
           name: formData.fullName.trim(),
@@ -527,11 +560,12 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         };
 
         if (existingLeader) {
-          const { error: leaderUpdateError } =
-            await supabase
-              .from('team_members')
-              .update(leaderData)
-              .eq('id', existingLeader.id);
+          const {
+            error: leaderUpdateError,
+          } = await supabase
+            .from('team_members')
+            .update(leaderData)
+            .eq('id', existingLeader.id);
 
           if (leaderUpdateError) {
             throw new Error(
@@ -540,15 +574,16 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
             );
           }
         } else {
-          const { error: leaderInsertError } =
-            await supabase
-              .from('team_members')
-              .insert([
-                {
-                  team_id: teamUUID,
-                  ...leaderData,
-                },
-              ]);
+          const {
+            error: leaderInsertError,
+          } = await supabase
+            .from('team_members')
+            .insert([
+              {
+                team_id: teamUUID,
+                ...leaderData,
+              },
+            ]);
 
           if (leaderInsertError) {
             throw new Error(
@@ -559,20 +594,15 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         }
 
         /*
-         * -----------------------------------------------------
-         * Existing non-leader members
-         *
-         * For a pending registration retry, remove the old
-         * non-leader members and recreate them from the current
-         * form. This keeps the existing schema clean.
-         * -----------------------------------------------------
+         * Remove old non-leader members before recreating them.
          */
-        const { error: deleteMembersError } =
-          await supabase
-            .from('team_members')
-            .delete()
-            .eq('team_id', teamUUID)
-            .eq('is_team_leader', false);
+        const {
+          error: deleteMembersError,
+        } = await supabase
+          .from('team_members')
+          .delete()
+          .eq('team_id', teamUUID)
+          .eq('is_team_leader', false);
 
         if (deleteMembersError) {
           throw new Error(
@@ -596,10 +626,11 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         );
 
         if (memberRows.length > 0) {
-          const { error: membersError } =
-            await supabase
-              .from('team_members')
-              .insert(memberRows);
+          const {
+            error: membersError,
+          } = await supabase
+            .from('team_members')
+            .insert(memberRows);
 
           if (membersError) {
             throw new Error(
@@ -610,9 +641,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         }
       } else {
         /*
-         * -----------------------------------------------------
          * Individual participant
-         * -----------------------------------------------------
          */
         const {
           data: existingParticipant,
@@ -627,9 +656,13 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           .maybeSingle();
 
         if (existingParticipantError) {
+          console.error(
+            'Existing participant lookup error:',
+            existingParticipantError
+          );
+
           throw new Error(
-            existingParticipantError.message ||
-              'Unable to check participant information.'
+            'Unable to check participant information.'
           );
         }
 
@@ -645,14 +678,15 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         };
 
         if (existingParticipant) {
-          const { error: participantUpdateError } =
-            await supabase
-              .from('participants')
-              .update(participantData)
-              .eq(
-                'id',
-                existingParticipant.id
-              );
+          const {
+            error: participantUpdateError,
+          } = await supabase
+            .from('participants')
+            .update(participantData)
+            .eq(
+              'id',
+              existingParticipant.id
+            );
 
           if (participantUpdateError) {
             throw new Error(
@@ -661,20 +695,21 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
             );
           }
         } else {
-          const { error: partErr } =
-            await supabase
-              .from('participants')
-              .insert([
-                {
-                  registration_id:
-                    registrationUUID,
-                  ...participantData,
-                },
-              ]);
+          const {
+            error: participantInsertError,
+          } = await supabase
+            .from('participants')
+            .insert([
+              {
+                registration_id:
+                  registrationUUID,
+                ...participantData,
+              },
+            ]);
 
-          if (partErr) {
+          if (participantInsertError) {
             throw new Error(
-              partErr.message ||
+              participantInsertError.message ||
                 'Failed to create participant record.'
             );
           }
@@ -683,13 +718,16 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
       /*
        * -------------------------------------------------------
-       * 4. Load Razorpay Checkout
+       * 5. Load Razorpay
        * -------------------------------------------------------
        */
       const razorpayLoaded =
         await loadRazorpayScript();
 
-      if (!razorpayLoaded || !window.Razorpay) {
+      if (
+        !razorpayLoaded ||
+        !window.Razorpay
+      ) {
         throw new Error(
           'Razorpay Checkout could not be loaded. Please check your internet connection and try again.'
         );
@@ -697,11 +735,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
       /*
        * -------------------------------------------------------
-       * 5. Create Razorpay order on the SERVER
+       * 6. Create Razorpay order through backend
        * -------------------------------------------------------
-       *
-       * IMPORTANT:
-       * Backend expects snake_case names.
        */
       const orderRes = await fetch(
         '/api/create-order',
@@ -718,9 +753,10 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         }
       );
 
-      const orderText = await orderRes.text();
+      const orderText =
+        await orderRes.text();
 
-      let orderData: any;
+      let orderData: any = null;
 
       try {
         orderData = orderText
@@ -745,24 +781,30 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
       /*
        * -------------------------------------------------------
-       * 6. Razorpay Checkout
+       * 7. Open Razorpay Checkout
        * -------------------------------------------------------
        */
       const options = {
         key: orderData.key_id,
         amount: orderData.amount,
-        currency: orderData.currency || 'INR',
+        currency:
+          orderData.currency || 'INR',
 
         name: 'ITEKRON 2K26',
 
-        description: `Registration for ${event.name}`,
+        description:
+          `Registration for ${event.name}`,
 
-        order_id: orderData.order_id,
+        order_id:
+          orderData.order_id,
 
         prefill: {
-          name: formData.fullName.trim(),
-          email: formData.email.trim(),
-          contact: formData.phone.trim(),
+          name:
+            formData.fullName.trim(),
+          email:
+            formData.email.trim(),
+          contact:
+            formData.phone.trim(),
         },
 
         notes: {
@@ -783,44 +825,44 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
             /*
              * -------------------------------------------------
-             * 7. NEVER mark payment successful here.
-             *
-             * The browser response is sent to our backend.
-             * Backend verifies the HMAC + Razorpay payment.
+             * 8. Verify payment on backend
              * -------------------------------------------------
              */
-            const verifyRes = await fetch(
-              '/api/verify-payment',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type':
-                    'application/json',
-                },
-                body: JSON.stringify({
-                  registration_id:
-                    registrationUUID,
+            const verifyRes =
+              await fetch(
+                '/api/verify-payment',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type':
+                      'application/json',
+                  },
+                  body: JSON.stringify({
+                    registration_id:
+                      registrationUUID,
 
-                  razorpay_order_id:
-                    response.razorpay_order_id,
+                    razorpay_order_id:
+                      response.razorpay_order_id,
 
-                  razorpay_payment_id:
-                    response.razorpay_payment_id,
+                    razorpay_payment_id:
+                      response.razorpay_payment_id,
 
-                  razorpay_signature:
-                    response.razorpay_signature,
-                }),
-              }
-            );
+                    razorpay_signature:
+                      response.razorpay_signature,
+                  }),
+                }
+              );
 
             const verifyText =
               await verifyRes.text();
 
-            let verifyData: any;
+            let verifyData: any = null;
 
             try {
               verifyData = verifyText
-                ? JSON.parse(verifyText)
+                ? JSON.parse(
+                    verifyText
+                  )
                 : null;
             } catch {
               throw new Error(
@@ -840,8 +882,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
             }
 
             /*
-             * Only AFTER server-side verification succeeds
-             * do we consider registration successful.
+             * Payment successfully verified.
              */
             setSubmitting(false);
 
@@ -852,7 +893,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
             setLocation(
               '/my-registrations'
             );
-          } catch (verificationError) {
+          } catch (
+            verificationError
+          ) {
             console.error(
               'Payment verification error:',
               verificationError
@@ -861,7 +904,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
             setSubmitting(false);
 
             setError(
-              verificationError instanceof Error
+              verificationError instanceof
+                Error
                 ? verificationError.message
                 : 'Payment verification failed. Please contact support.'
             );
@@ -880,7 +924,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
       };
 
       const paymentObject =
-        new window.Razorpay(options);
+        new window.Razorpay(
+          options
+        );
 
       paymentObject.on(
         'payment.failed',
@@ -893,7 +939,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           setSubmitting(false);
 
           setError(
-            response?.error?.description ||
+            response?.error
+              ?.description ||
               'Payment failed. Please try again.'
           );
         }
@@ -932,7 +979,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     return (
       <div className="p-8 text-center text-white">
         <p className="text-red-500 mb-4">
-          {error || 'Event not found.'}
+          {error ||
+            'Event not found.'}
         </p>
 
         <button
@@ -949,13 +997,15 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     String(event.id).toUpperCase() ===
     'CONVERA01';
 
-  const displayPrice = isConvera
-    ? '₹150'
-    : '₹50';
+  const displayPrice =
+    isConvera
+      ? '₹150'
+      : '₹50';
 
   const isTeam =
     String(event.team_type || '')
-      .toLowerCase() === 'team';
+      .toLowerCase() ===
+    'team';
 
   return (
     <div className="spider-card p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-900/95 backdrop-blur-md text-white max-h-[85vh] overflow-y-auto">
@@ -1148,7 +1198,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
               <select
                 name="foodPreference"
-                value={formData.foodPreference}
+                value={
+                  formData.foodPreference
+                }
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-red-600"
@@ -1193,7 +1245,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
                       Member #{idx + 2}
                     </span>
 
-                    {teamMembers.length > 1 && (
+                    {teamMembers.length >
+                      1 && (
                       <button
                         type="button"
                         onClick={() =>
@@ -1201,7 +1254,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
                             idx
                           )
                         }
-                        disabled={submitting}
+                        disabled={
+                          submitting
+                        }
                         className="text-red-500 text-xs hover:underline disabled:opacity-50"
                       >
                         Remove
@@ -1213,7 +1268,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
                     <input
                       type="text"
                       placeholder="Member Name *"
-                      value={member.name}
+                      value={
+                        member.name
+                      }
                       onChange={(e) =>
                         handleTeamMemberChange(
                           idx,
@@ -1228,7 +1285,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
                     <input
                       type="email"
                       placeholder="Member Email *"
-                      value={member.email}
+                      value={
+                        member.email
+                      }
                       onChange={(e) =>
                         handleTeamMemberChange(
                           idx,
@@ -1243,7 +1302,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
                     <input
                       type="tel"
                       placeholder="Member Phone *"
-                      value={member.phone}
+                      value={
+                        member.phone
+                      }
                       onChange={(e) =>
                         handleTeamMemberChange(
                           idx,
@@ -1258,7 +1319,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
                     <input
                       type="text"
                       placeholder="Department *"
-                      value={member.department}
+                      value={
+                        member.department
+                      }
                       onChange={(e) =>
                         handleTeamMemberChange(
                           idx,
@@ -1271,7 +1334,9 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
                     />
 
                     <select
-                      value={member.year}
+                      value={
+                        member.year
+                      }
                       onChange={(e) =>
                         handleTeamMemberChange(
                           idx,
@@ -1354,7 +1419,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
               </>
             ) : (
               <span>
-                Proceed to Pay {displayPrice}
+                Proceed to Pay{' '}
+                {displayPrice}
               </span>
             )}
           </button>
