@@ -240,8 +240,8 @@ export default async function handler(
       await supabaseAdmin
         .from("registrations")
         .update({
-          payment_status: "completed",
-          status: "completed",
+          payment_status: "paid",
+          status: "confirmed",
           razorpay_payment_id,
           razorpay_signature,
         })
