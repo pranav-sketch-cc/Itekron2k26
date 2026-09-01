@@ -24,9 +24,21 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
     }
   };
 
-  const isConvera = event.id === 'CONVERA01';
-  const price = isConvera ? '₹150' : '₹50';
-  const isTeam = event.team_type?.toLowerCase() === 'team';
+  const isConvera =
+  String(event.id).toUpperCase() === 'CONVERA01';
+
+const isTechnical =
+  event.category?.toLowerCase() === 'technical';
+
+const price =
+  isConvera
+    ? '₹150'
+    : isTechnical
+      ? '₹50'
+      : '₹0';
+
+const isTeam =
+  event.team_type?.toLowerCase() === 'team';
 
   return (
     <div className="spider-card p-6 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md flex flex-col justify-between">
