@@ -60,12 +60,6 @@ export const Signup: React.FC = () => {
         throw signupError;
       }
 
-      /*
-       * Supabase may return a user/session depending on
-       * whether email confirmation is enabled.
-       *
-       * We don't assume either behaviour here.
-       */
       if (data) {
         setSuccess(true);
       } else {
@@ -102,9 +96,9 @@ export const Signup: React.FC = () => {
           </p>
         </div>
 
-        {/* Success */}
+        {/* Success Message */}
         {success ? (
-          <div className="p-6 bg-emerald-950/60 border border-emerald-800 rounded-2xl text-center space-y-3 text-xs">
+          <div className="p-6 bg-emerald-950/60 border border-emerald-800 rounded-2xl text-center space-y-4 text-xs">
 
             <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
 
@@ -112,8 +106,8 @@ export const Signup: React.FC = () => {
               Account Created Successfully
             </h3>
 
-            <p className="text-slate-300">
-              Your account has been created using
+            <p className="text-slate-300 leading-relaxed">
+              We have sent a verification email to
               <strong className="text-white">
                 {' '}
                 {email}
@@ -121,17 +115,23 @@ export const Signup: React.FC = () => {
               .
             </p>
 
-            <p className="text-slate-400">
-              If email verification is enabled, please check your
-              inbox and verify your email before signing in.
+            <p className="text-slate-300 leading-relaxed">
+              Please check your inbox and verify your email
+              address before signing in.
             </p>
 
-            <Link
-              href="/login"
-              className="spider-button-primary inline-block px-6 py-2.5 rounded-xl font-bold mt-2"
-            >
-              Proceed to Login
-            </Link>
+            {/* Spam Warning */}
+            <div className="mt-2 p-3.5 rounded-xl bg-amber-950/50 border border-amber-800/60 text-amber-300">
+              <p className="font-semibold">
+                Can't find the email?
+              </p>
+
+              <p className="mt-1 text-amber-200/80">
+                Please check your <strong>Spam</strong> or{' '}
+                <strong>Junk</strong> folder as well.
+              </p>
+            </div>
+
           </div>
         ) : (
           <form
@@ -220,20 +220,23 @@ export const Signup: React.FC = () => {
             >
               {loading ? 'Creating Account...' : 'Sign Up'}
             </button>
+
           </form>
         )}
 
-        {/* Login */}
-        <p className="text-center text-xs text-slate-400">
-          Already registered?{' '}
+        {/* Login link */}
+        {!success && (
+          <p className="text-center text-xs text-slate-400">
+            Already registered?{' '}
 
-          <Link
-            href="/login"
-            className="text-red-400 font-bold hover:underline"
-          >
-            Sign In Here
-          </Link>
-        </p>
+            <Link
+              href="/login"
+              className="text-red-400 font-bold hover:underline"
+            >
+              Sign In Here
+            </Link>
+          </p>
+        )}
 
       </div>
     </div>
