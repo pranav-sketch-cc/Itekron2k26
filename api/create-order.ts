@@ -1,6 +1,6 @@
 /// <reference types="node" />
 
-import type { VercelRequest, VercelResponse } from "@Vercel/node";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import Razorpay from "razorpay";
 import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
 
