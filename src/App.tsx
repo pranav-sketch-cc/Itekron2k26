@@ -16,6 +16,9 @@ import SignUp from './pages/SignUp';
 import { MyRegistrations } from './pages/MyRegistrations';
 import DigitalPass from './pages/DigitalPass';
 
+import OrganizerLogin from './pages/OrganizerLogin';
+import OrganizerDashboard from './pages/OrganizerDashboard';
+
 const AppLayout: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
@@ -37,7 +40,10 @@ export function App() {
     <AppLayout>
       <Switch>
 
-        {/* Public pages */}
+        {/* =========================
+            PUBLIC PAGES
+        ========================== */}
+
         <Route
           path="/"
           component={Home}
@@ -73,7 +79,11 @@ export function App() {
           component={Sponsors}
         />
 
-        {/* Authentication */}
+
+        {/* =========================
+            PARTICIPANT AUTH
+        ========================== */}
+
         <Route
           path="/login"
           component={Login}
@@ -84,19 +94,41 @@ export function App() {
           component={SignUp}
         />
 
-        {/* User registrations */}
+
+        {/* =========================
+            PARTICIPANT REGISTRATIONS
+        ========================== */}
+
         <Route
           path="/my-registrations"
           component={MyRegistrations}
         />
 
-        {/* Digital entry pass */}
         <Route
           path="/pass/:id"
           component={DigitalPass}
         />
 
-        {/* Fallback */}
+
+        {/* =========================
+            ORGANIZER PORTAL
+        ========================== */}
+
+        <Route
+          path="/organizer/login"
+          component={OrganizerLogin}
+        />
+
+        <Route
+          path="/organizer"
+          component={OrganizerDashboard}
+        />
+
+
+        {/* =========================
+            FALLBACK
+        ========================== */}
+
         <Route
           component={Home}
         />
