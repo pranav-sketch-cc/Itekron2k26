@@ -1,4 +1,6 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+/// <reference types="node" />
+
+import type { VercelRequest, VercelResponse } from "@Vercel/node";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
@@ -7,7 +9,9 @@ const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
 if (!razorpayKeyId || !razorpayKeySecret) {
-  throw new Error("Razorpay server environment variables are missing");
+  throw new Error(
+    "Razorpay server environment variables are missing"
+  );
 }
 
 const razorpay = new Razorpay({
@@ -15,8 +19,61 @@ const razorpay = new Razorpay({
   key_secret: razorpayKeySecret,
 });
 
-function getExpectedAmount(eventId: string): number {
-  return eventId === "CONVERA01" ? 15000 : 5000;
+type EventPricing = {
+  requiresPayment: boolean;
+  amount: number;
+};
+
+/*
+ * IMPORTANT:
+ * This MUST match the pricing logic in create-order.ts.
+ *
+ * Convera       = ₹150
+ * Other Tech    = ₹50
+ * Non-Technical = ₹0
+ */
+function getEventPricing(
+  eventName: string,
+  category: string | null | undefined
+): EventPricing {
+  const normalizedName = String(eventName || "")
+    .trim()
+    .toLowerCase();
+
+  const normalizedCategory = String(category || "")
+    .trim()
+    .toLowerCase();
+
+  /*
+   * Convera
+   * ₹150 = 15000 paise
+   */
+  if (normalizedName.includes("convera")) {
+    return {
+      requiresPayment: true,
+      amount: 15000,
+    };
+  }
+
+  /*
+   * Other Technical events
+   * ₹50 = 5000 paise
+   */
+  if (normalizedCategory === "technical") {
+    return {
+      requiresPayment: true,
+      amount: 5000,
+    };
+  }
+
+  /*
+   * Non-Technical events
+   * No payment required.
+   */
+  return {
+    requiresPayment: false,
+    amount: 0,
+  };
 }
 
 function verifyPaymentSignature(
@@ -29,7 +86,10 @@ function verifyPaymentSignature(
     .update(`${orderId}|${paymentId}`)
     .digest("hex");
 
-  if (generatedSignature.length !== signature.length) {
+  if (
+    generatedSignature.length !==
+    signature.length
+  ) {
     return false;
   }
 
@@ -66,33 +126,42 @@ export default async function handler(
     ) {
       return res.status(400).json({
         success: false,
-        error: "Missing payment verification details",
+        error:
+          "Missing payment verification details",
       });
     }
 
     /*
      * Find the existing registration.
      */
-    const { data: registration, error: registrationError } =
-      await supabaseAdmin
-        .from("registrations")
-        .select(`
-          id,
-          registration_id,
-          event_id,
-          registration_type,
-          status,
-          payment_required,
-          payment_status,
-          participant_email,
-          razorpay_order_id,
-          razorpay_payment_id
-        `)
-        .eq("id", registration_id)
-        .single();
+    const {
+      data: registration,
+      error: registrationError,
+    } = await supabaseAdmin
+      .from("registrations")
+      .select(`
+        id,
+        registration_id,
+        event_id,
+        registration_type,
+        status,
+        payment_required,
+        payment_status,
+        participant_email,
+        razorpay_order_id,
+        razorpay_payment_id
+      `)
+      .eq("id", registration_id)
+      .single();
 
-    if (registrationError || !registration) {
-      console.error("Registration lookup failed:", registrationError);
+    if (
+      registrationError ||
+      !registration
+    ) {
+      console.error(
+        "Registration lookup failed:",
+        registrationError
+      );
 
       return res.status(404).json({
         success: false,
@@ -101,7 +170,7 @@ export default async function handler(
     }
 
     /*
-     * The order returned by Razorpay MUST belong to this
+     * The Razorpay order MUST belong to this
      * exact registration.
      */
     if (
@@ -117,11 +186,13 @@ export default async function handler(
 
     /*
      * Idempotency:
-     * if the exact payment was already processed,
-     * safely return success.
+     *
+     * Successful payment status in our database
+     * is "paid", NOT "completed".
      */
     if (
-      registration.payment_status === "completed" &&
+      registration.payment_status ===
+        "paid" &&
       registration.razorpay_payment_id ===
         razorpay_payment_id
     ) {
@@ -131,22 +202,73 @@ export default async function handler(
         already_processed: true,
         registration_id:
           registration.registration_id,
-        registration_uuid: registration.id,
-        event_id: registration.event_id,
+        registration_uuid:
+          registration.id,
+        event_id:
+          registration.event_id,
       });
     }
 
     /*
-     * Calculate the expected amount SERVER-SIDE.
+     * Fetch the actual event from Supabase.
      *
-     * Normal events = ₹50
-     * Convera = ₹150
-     *
-     * Razorpay amount is in paise.
+     * Pricing must come from the database,
+     * not from the browser.
      */
-    const expectedAmount = getExpectedAmount(
-      registration.event_id
+    const {
+      data: event,
+      error: eventError,
+    } = await supabaseAdmin
+      .from("events")
+      .select(`
+        id,
+        name,
+        category
+      `)
+      .eq("id", registration.event_id)
+      .single();
+
+    if (
+      eventError ||
+      !event
+    ) {
+      console.error(
+        "Event lookup failed:",
+        eventError
+      );
+
+      return res.status(404).json({
+        success: false,
+        error: "Event not found",
+      });
+    }
+
+    /*
+     * Calculate the expected amount using
+     * the SAME pricing rules as create-order.ts.
+     */
+    const pricing = getEventPricing(
+      event.name,
+      event.category
     );
+
+    /*
+     * This endpoint is only for paid registrations.
+     *
+     * If a non-technical registration somehow
+     * reaches this endpoint, do not attempt to
+     * verify a Razorpay payment.
+     */
+    if (!pricing.requiresPayment) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Payment is not required for this event",
+      });
+    }
+
+    const expectedAmount =
+      pricing.amount;
 
     /*
      * Verify Razorpay HMAC signature.
@@ -161,14 +283,16 @@ export default async function handler(
     if (!signatureValid) {
       return res.status(400).json({
         success: false,
-        error: "Invalid Razorpay payment signature",
+        error:
+          "Invalid Razorpay payment signature",
       });
     }
 
     /*
      * Fetch the real payment from Razorpay.
      *
-     * This prevents trusting only the browser callback.
+     * This prevents trusting only the
+     * browser callback.
      */
     const payment =
       await razorpay.payments.fetch(
@@ -192,37 +316,64 @@ export default async function handler(
     ) {
       return res.status(400).json({
         success: false,
-        error: "Payment order mismatch",
+        error:
+          "Payment order mismatch",
       });
     }
 
     /*
      * Verify amount.
+     *
+     * Convera → 15000 paise
+     * Other Technical → 5000 paise
      */
     if (
       Number(payment.amount) !==
       expectedAmount
     ) {
+      console.error(
+        "Payment amount mismatch:",
+        {
+          expectedAmount,
+          actualAmount:
+            payment.amount,
+          eventId:
+            registration.event_id,
+          eventName:
+            event.name,
+          category:
+            event.category,
+        }
+      );
+
       return res.status(400).json({
         success: false,
-        error: "Payment amount mismatch",
+        error:
+          "Payment amount mismatch",
       });
     }
 
     /*
      * Verify currency.
      */
-    if (payment.currency !== "INR") {
+    if (
+      payment.currency !==
+      "INR"
+    ) {
       return res.status(400).json({
         success: false,
-        error: "Invalid payment currency",
+        error:
+          "Invalid payment currency",
       });
     }
 
     /*
      * Only captured payments are successful.
      */
-    if (payment.status !== "captured") {
+    if (
+      payment.status !==
+      "captured"
+    ) {
       return res.status(400).json({
         success: false,
         error:
@@ -234,34 +385,38 @@ export default async function handler(
      * Update the EXISTING registration.
      *
      * IMPORTANT:
-     * Do not create a second registration here.
+     * Do not create a second registration.
      */
-    const { data: updatedRegistration, error: updateError } =
-      await supabaseAdmin
-        .from("registrations")
-        .update({
-          payment_status: "paid",
-          status: "confirmed",
+    const {
+      data: updatedRegistration,
+      error: updateError,
+    } = await supabaseAdmin
+      .from("registrations")
+      .update({
+        payment_status: "paid",
+        status: "confirmed",
+        razorpay_payment_id:
           razorpay_payment_id,
+        razorpay_signature:
           razorpay_signature,
-        })
-        .eq("id", registration.id)
-        .eq(
-          "razorpay_order_id",
-          razorpay_order_id
-        )
-        .select(`
-          id,
-          registration_id,
-          event_id,
-          registration_type,
-          status,
-          payment_status,
-          participant_email,
-          razorpay_order_id,
-          razorpay_payment_id
-        `)
-        .single();
+      })
+      .eq("id", registration.id)
+      .eq(
+        "razorpay_order_id",
+        razorpay_order_id
+      )
+      .select(`
+        id,
+        registration_id,
+        event_id,
+        registration_type,
+        status,
+        payment_status,
+        participant_email,
+        razorpay_order_id,
+        razorpay_payment_id
+      `)
+      .single();
 
     if (
       updateError ||
@@ -284,26 +439,47 @@ export default async function handler(
       {
         registrationId:
           updatedRegistration.registration_id,
+
         razorpayOrderId:
           razorpay_order_id,
+
         razorpayPaymentId:
           razorpay_payment_id,
-        amount: expectedAmount,
+
+        amount:
+          expectedAmount,
+
+        eventId:
+          updatedRegistration.event_id,
+
+        eventName:
+          event.name,
+
+        category:
+          event.category,
       }
     );
 
     return res.status(200).json({
       success: true,
       verified: true,
+
       registration_id:
         updatedRegistration.registration_id,
+
       registration_uuid:
         updatedRegistration.id,
+
       event_id:
         updatedRegistration.event_id,
+
       payment_id:
         updatedRegistration.razorpay_payment_id,
-      amount: expectedAmount,
+
+      amount:
+        expectedAmount,
+
+      currency: "INR",
     });
   } catch (error: any) {
     console.error(
