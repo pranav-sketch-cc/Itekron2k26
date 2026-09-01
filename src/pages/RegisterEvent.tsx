@@ -422,9 +422,13 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
               registration_type: isTeam
                 ? 'team'
                 : 'individual',
-              status: 'pending',
-              payment_required: true,
-              payment_status: 'pending',
+              status: requiresPayment
+                  ? 'pending'
+                  : 'confirmed',
+              payment_required: requiresPayment,
+              payment_status: requiresPayment
+                  ? 'pending'
+                  : 'paid',
               participant_email:
                 formData.email.trim(),
             },
@@ -715,6 +719,20 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           }
         }
       }
+      /*
+ * Non-Technical events do not require payment.
+ * Registration is completed directly.
+ */
+if (!requiresPayment) {
+  setSubmitting(false);
+
+  if (onClose) {
+    onClose();
+  }
+
+  setLocation('/my-registrations');
+  return;
+}
 
       /*
        * -------------------------------------------------------
@@ -993,14 +1011,22 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     );
   }
 
-  const isConvera =
-    String(event.id).toUpperCase() ===
-    'CONVERA01';
+ const isConvera =
+  String(event.id).toUpperCase() === 'CONVERA01';
 
-  const displayPrice =
-    isConvera
-      ? '₹150'
-      : '₹50';
+const isTechnical =
+  String(event.category || '')
+    .trim()
+    .toLowerCase() === 'technical';
+
+const requiresPayment =
+  isConvera || isTechnical;
+
+const displayPrice = isConvera
+  ? '₹150'
+  : isTechnical
+    ? '₹50'
+    : '₹0';
 
   const isTeam =
     String(event.team_type || '')
@@ -1409,20 +1435,14 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
             disabled={submitting}
             className="w-full sm:w-auto spider-button-primary px-8 py-3 rounded-xl text-sm font-bold shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {submitting ? (
-              <>
-                <LoadingSpinner />
-
-                <span>
-                  Processing Payment...
-                </span>
-              </>
-            ) : (
-              <span>
-                Proceed to Pay{' '}
-                {displayPrice}
-              </span>
-            )}
+           {requiresPayment
+              ? submitting
+                ? 'Processing Payment...'
+                : `Proceed to Pay ${displayPrice}`
+              : submitting
+                ? 'Registering...'
+                : 'Complete Registration'
+            }
           </button>
         </div>
       </form>
