@@ -79,15 +79,18 @@ export const Footer: React.FC = () => {
           {/* Quantum ARC Branding + Contact */}
           <div className="space-y-7 md:col-span-1">
             <div className="space-y-3">
-              <div className="inline-flex items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-950/80 p-2.5 shadow-lg shadow-blue-950/10">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500 font-bold">
+                Website designed & developed by
+              </p>
+              <div className="inline-flex items-center justify-center rounded-2xl border border-slate-700/80 bg-white p-3 shadow-xl shadow-blue-950/20">
                 <img
                   src={quantumArcLogo}
                   alt="Quantum ARC"
-                  className="w-24 sm:w-28 h-auto rounded-xl object-contain"
+                  className="w-36 sm:w-40 h-auto rounded-xl object-contain"
                 />
               </div>
-              <p className="text-[10px] text-slate-500 leading-relaxed max-w-[190px]">
-                Quantum ARC
+              <p className="text-[11px] text-slate-500 leading-relaxed max-w-[220px]">
+                Digital experience & technology partner for ITEKRON 2K26.
               </p>
             </div>
 
