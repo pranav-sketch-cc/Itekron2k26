@@ -121,9 +121,9 @@ export const Footer: React.FC = () => {
       </div>
 
       <div className="border-t border-slate-900/60 bg-[#020406] py-5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:flex sm:items-center sm:justify-between text-slate-600 font-mono text-[10px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center gap-1.5 text-center text-slate-600 font-mono text-[10px]">
           <p>&copy; 2026 ITEKRON Symposium Department of IT. All rights reserved.</p>
-          <p className="mt-2 sm:mt-0 italic">New Prince Shri Bhavani College, Santhosapuram, Chennai 600069</p>
+          <p className="italic">New Prince Shri Bhavani College, Santhosapuram, Chennai 600069</p>
         </div>
       </div>
     </footer>
