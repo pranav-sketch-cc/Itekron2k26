@@ -65,6 +65,35 @@ export const About: React.FC = () => {
     },
   ];
 
+  const teamByCategory = (category: string) => organizingTeam.filter((member) => member.category === category);
+
+  const teamCard = (member: (typeof organizingTeam)[number], featured = false) => (
+    <div
+      className={`spider-card rounded-2xl border p-5 sm:p-6 text-center transition-all duration-300 ease-in-out hover:-translate-y-1.5 hover:shadow-2xl ${
+        member.category === 'HEAD'
+          ? 'border-red-800 shadow-lg shadow-red-950/40 hover:border-red-500 hover:shadow-red-900/50'
+          : member.category === 'STAFF'
+            ? 'border-blue-900/60 hover:border-blue-500 hover:shadow-blue-900/30'
+            : 'border-slate-800 hover:border-slate-700 hover:bg-slate-950/80'
+      } ${featured ? 'min-w-[230px] sm:min-w-[260px]' : ''}`}
+    >
+      <span
+        className={`text-[10px] font-extrabold uppercase tracking-[0.16em] block leading-tight ${
+          member.category === 'HEAD'
+            ? 'text-red-400'
+            : member.category === 'STAFF'
+              ? 'text-blue-400'
+              : 'text-slate-500'
+        }`}
+      >
+        {member.role}
+      </span>
+      <span className="mt-2 text-base sm:text-lg font-black text-white block leading-tight">
+        {member.name}
+      </span>
+    </div>
+  );
+
   return (
     <div className="min-h-screen pt-24 pb-20 space-y-20 sm:space-y-24">
       {/* Hero */}
@@ -237,34 +266,49 @@ export const About: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {organizingTeam.map((member, index) => (
-            <div
-              key={`${member.role}-${member.name}-${index}`}
-              className={`spider-card p-6 rounded-2xl border transition-all duration-300 ease-in-out hover:-translate-y-1.5 hover:shadow-2xl ${
-                member.category === 'HEAD'
-                  ? 'border-red-800 shadow-lg shadow-red-950/40 hover:border-red-500 hover:shadow-red-900/50'
-                  : member.category === 'STAFF'
-                    ? 'border-blue-900/60 hover:border-blue-500 hover:shadow-blue-900/30'
-                    : 'border-slate-800 hover:border-slate-700 hover:bg-slate-950/80'
-              }`}
-            >
-              <span
-                className={`text-[10px] font-extrabold uppercase tracking-[0.16em] block leading-tight ${
-                  member.category === 'HEAD'
-                    ? 'text-red-400'
-                    : member.category === 'STAFF'
-                      ? 'text-blue-400'
-                      : 'text-slate-500'
-                }`}
-              >
-                {member.role}
-              </span>
-              <span className="mt-2 text-base sm:text-lg font-black text-white block leading-tight">
-                {member.name}
-              </span>
+        <div className="relative pt-2">
+          {/* HOD */}
+          <div className="flex justify-center">
+            {teamByCategory('HEAD').map((member) => teamCard(member, true))}
+          </div>
+
+          {/* Connector from HOD to staff */}
+          <div className="hidden sm:flex justify-center h-10">
+            <div className="w-px bg-gradient-to-b from-red-500/70 to-blue-500/50" />
+          </div>
+
+          {/* Staff coordinators */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
+            {teamByCategory('STAFF').map((member) => teamCard(member))}
+          </div>
+
+          {/* Connector into student core */}
+          <div className="hidden sm:flex justify-center h-10 relative">
+            <div className="w-px bg-gradient-to-b from-blue-500/50 to-slate-600/70" />
+          </div>
+
+          {/* Core team */}
+          <div className="relative max-w-3xl mx-auto">
+            <div className="hidden sm:block absolute left-1/2 -top-5 w-1/2 h-5 border-t border-slate-700/80 border-l border-r rounded-t-2xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {teamByCategory('CORE').map((member) => teamCard(member))}
             </div>
-          ))}
+          </div>
+
+          {/* Connector into event coordinators */}
+          <div className="hidden sm:flex justify-center h-10 relative">
+            <div className="w-px bg-gradient-to-b from-slate-600/70 to-red-500/40" />
+          </div>
+
+          {/* Event coordinator branches */}
+          <div className="relative max-w-5xl mx-auto">
+            <div className="hidden lg:block absolute top-0 left-[16.66%] right-[16.66%] border-t border-slate-700/80" />
+            <div className="hidden lg:block absolute top-0 left-1/4 h-5 border-l border-slate-700/80" />
+            <div className="hidden lg:block absolute top-0 right-1/4 h-5 border-l border-slate-700/80" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-5">
+              {[...teamByCategory('TECH'), ...teamByCategory('NON_TECH')].map((member) => teamCard(member))}
+            </div>
+          </div>
         </div>
       </section>
 
