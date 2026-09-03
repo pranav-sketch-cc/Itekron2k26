@@ -8,9 +8,10 @@ export const Footer: React.FC = () => {
   return (
     <footer className="w-full bg-[#030508] border-t border-slate-900/60 text-slate-400 text-xs mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1.5fr,1fr] gap-x-10 gap-y-12">
-          {/* Logo & Info */}
-          <div className="space-y-4 md:col-span-1">
+        {/* Main footer content */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-20">
+          {/* ITEKRON Branding */}
+          <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-3 group">
               <div className="h-12 sm:h-16 w-auto flex items-center justify-center bg-transparent flex-shrink-0">
                 <img
@@ -38,7 +39,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Quick Links & Portals */}
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-8 md:col-span-2">
+          <div className="grid grid-cols-2 gap-8">
             <div className="space-y-4">
               <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px]">Quick Links</h5>
               <ul className="space-y-2.5">
@@ -76,50 +77,50 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Quantum ARC Branding + Contact */}
-          <div className="space-y-7 md:col-span-1">
-            <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500 font-bold">
-                Website designed & developed by
-              </p>
-              <div className="inline-flex items-center justify-center rounded-2xl border border-slate-700/80 bg-white p-3 shadow-xl shadow-blue-950/20">
-                <img
-                  src={quantumArcLogo}
-                  alt="Quantum ARC"
-                  className="w-36 sm:w-40 h-auto rounded-xl object-contain"
-                />
-              </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed max-w-[220px]">
-                Digital experience & technology partner for ITEKRON 2K26.
-              </p>
-            </div>
+          {/* Contact */}
+          <div className="space-y-4">
+            <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px]">Contact</h5>
+            <ul className="space-y-3.5 text-slate-300">
+              <li className="flex items-start gap-3">
+                <Phone className="w-3.5 h-3.5 text-red-500 mt-1 flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="block text-slate-400 text-[10px] font-bold">Symposium Helpline</span>
+                  <a href="tel:+917010438705" className="font-mono text-white hover:text-red-300 font-bold transition">
+                    +91 70104 38705
+                  </a>
+                </div>
+              </li>
 
-            <div className="space-y-4">
-              <h5 className="font-extrabold text-white uppercase tracking-wider text-[11px]">Contact</h5>
-              <ul className="space-y-3.5 text-slate-300">
-                <li className="flex items-start gap-3">
-                  <Phone className="w-3.5 h-3.5 text-red-500 mt-1 flex-shrink-0" />
-                  <div className="space-y-0.5">
-                    <span className="block text-slate-400 text-[10px] font-bold">Symposium Helpline</span>
-                    <a href="tel:+917010438705" className="font-mono text-white hover:text-red-300 font-bold transition">
-                      +91 70104 38705
-                    </a>
-                  </div>
-                </li>
-
-                <li className="flex items-start gap-3">
-                  <Mail className="w-3.5 h-3.5 text-blue-500 mt-1 flex-shrink-0" />
-                  <div className="space-y-0.5">
-                    <span className="block text-slate-400 text-[10px] font-bold">Official Event Email</span>
-                    <span className="font-mono text-slate-300 italic">Coming soon</span>
-                  </div>
-                </li>
-              </ul>
-            </div>
+              <li className="flex items-start gap-3">
+                <Mail className="w-3.5 h-3.5 text-blue-500 mt-1 flex-shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="block text-slate-400 text-[10px] font-bold">Official Event Email</span>
+                  <span className="font-mono text-slate-300 italic">Coming soon</span>
+                </div>
+              </li>
+            </ul>
           </div>
+        </div>
+
+        {/* Developer / Technology Partner branding */}
+        <div className="mt-12 pt-8 border-t border-slate-900/60 flex flex-col items-center justify-center text-center">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500 font-bold mb-4">
+            Website designed & developed by
+          </p>
+          <div className="inline-flex items-center justify-center rounded-2xl border border-slate-700/80 bg-white p-3 shadow-xl shadow-blue-950/20">
+            <img
+              src={quantumArcLogo}
+              alt="Quantum ARC"
+              className="w-36 sm:w-40 h-auto rounded-xl object-contain"
+            />
+          </div>
+          <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
+            Digital experience & technology partner for ITEKRON 2K26.
+          </p>
         </div>
       </div>
 
+      {/* Bottom bar */}
       <div className="border-t border-slate-900/60 bg-[#020406] py-5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center gap-1.5 text-center text-slate-600 font-mono text-[10px]">
           <p>&copy; 2026 ITEKRON Symposium Department of IT. All rights reserved.</p>
