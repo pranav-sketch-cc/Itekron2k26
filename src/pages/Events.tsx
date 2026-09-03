@@ -9,7 +9,7 @@ import { formatDate } from '../lib/utils';
 export const Events: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Technical');
 
   useEffect(() => {
     fetchEvents();
@@ -30,15 +30,20 @@ export const Events: React.FC = () => {
 
   const categories = useMemo(() => {
     const available = Array.from(new Set(events.map((e) => e.category).filter(Boolean))) as string[];
-    return available.filter((category) => {
-      const normalized = category.trim().toLowerCase();
-      return normalized === 'technical' || normalized === 'non-technical';
-    });
+    return available
+      .filter((category) => {
+        const normalized = category.trim().toLowerCase();
+        return normalized === 'technical' || normalized === 'non-technical';
+      })
+      .sort((a, b) => {
+        const order = ['technical', 'non-technical'];
+        return order.indexOf(a.trim().toLowerCase()) - order.indexOf(b.trim().toLowerCase());
+      });
   }, [events]);
 
-  const filteredEvents = selectedCategory === 'All'
-    ? events
-    : events.filter((e) => e.category === selectedCategory);
+  const filteredEvents = events.filter(
+    (event) => event.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase()
+  );
 
   return (
     <div className="relative min-h-screen overflow-hidden pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
@@ -68,12 +73,12 @@ export const Events: React.FC = () => {
       {categories.length > 0 && (
         <div className="flex flex-wrap justify-center gap-3">
           {categories.map((cat) => {
-            const active = selectedCategory === cat;
+            const active = selectedCategory.trim().toLowerCase() === cat.trim().toLowerCase();
             const isTechnical = cat.trim().toLowerCase() === 'technical';
             return (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(active ? 'All' : cat)}
+                onClick={() => setSelectedCategory(cat)}
                 className={`group relative overflow-hidden px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border ${
                   active
                     ? isTechnical
@@ -125,7 +130,6 @@ export const Events: React.FC = () => {
                 className="group relative overflow-hidden spider-card rounded-3xl border border-slate-800/80 p-6 flex flex-col justify-between space-y-5 transition-all duration-500 ease-out hover:-translate-y-2 hover:border-slate-600 hover:shadow-2xl"
                 style={{ animationDelay: `${index * 80}ms` }}
               >
-                {/* Hover spotlight */}
                 <div className={`pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full blur-3xl opacity-0 transition-all duration-500 group-hover:opacity-100 ${accent === 'red' ? 'bg-red-500/20' : 'bg-blue-500/20'}`} />
                 <div className={`pointer-events-none absolute left-0 right-0 top-0 h-px scale-x-50 opacity-50 transition-all duration-500 group-hover:scale-x-100 group-hover:opacity-100 ${accent === 'red' ? 'bg-gradient-to-r from-transparent via-red-500 to-transparent' : 'bg-gradient-to-r from-transparent via-blue-500 to-transparent'}`} />
                 <div className="pointer-events-none absolute right-5 top-14 text-6xl font-black text-white/[0.025] select-none">
