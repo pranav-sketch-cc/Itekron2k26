@@ -15,13 +15,10 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import { MyRegistrations } from './pages/MyRegistrations';
 import DigitalPass from './pages/DigitalPass';
-
 import OrganizerLogin from './pages/OrganizerLogin';
 import OrganizerDashboard from './pages/OrganizerDashboard';
 
-const AppLayout: React.FC<{
-  children: React.ReactNode;
-}> = ({ children }) => {
+const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="relative flex min-h-screen flex-col bg-transparent text-white">
       <div className="site-background" aria-hidden="true">
@@ -32,11 +29,7 @@ const AppLayout: React.FC<{
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <Navbar />
-
-        <main className="flex-grow">
-          {children}
-        </main>
-
+        <main className="flex-grow">{children}</main>
         <Footer />
       </div>
     </div>
@@ -47,10 +40,6 @@ export function App() {
   return (
     <AppLayout>
       <Switch>
-        {/* =========================
-            PUBLIC PAGES
-        ========================== */}
-
         <Route path="/" component={Home} />
         <Route path="/about" component={About} />
         <Route path="/events" component={Events} />
@@ -62,30 +51,14 @@ export function App() {
         <Route path="/schedule" component={Schedule} />
         <Route path="/sponsors" component={Sponsors} />
 
-        {/* =========================
-            PARTICIPANT AUTH
-        ========================== */
-
         <Route path="/login" component={Login} />
         <Route path="/signup" component={SignUp} />
-
-        {/* =========================
-            PARTICIPANT REGISTRATIONS
-        ========================== */
 
         <Route path="/my-registrations" component={MyRegistrations} />
         <Route path="/pass/:id" component={DigitalPass} />
 
-        {/* =========================
-            ORGANIZER PORTAL
-        ========================== */
-
         <Route path="/organizer/login" component={OrganizerLogin} />
         <Route path="/organizer" component={OrganizerDashboard} />
-
-        {/* =========================
-            FALLBACK
-        ========================== */}
 
         <Route component={Home} />
       </Switch>
