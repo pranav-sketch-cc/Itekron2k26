@@ -4,24 +4,99 @@
   color-scheme: dark;
 }
 
+html {
+  background: #03050a;
+}
+
 body {
-  background-color: #04060a;
+  background-color: #03050a;
   color: #f1f5f9;
   font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: hidden;
-  /* Layered Background System */
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(220, 38, 38, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.12) 0%, transparent 45%),
-    radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0%, #04060a 100%);
+  background-image:
+    radial-gradient(circle at 8% 12%, rgba(220, 38, 38, 0.10) 0%, transparent 30%),
+    radial-gradient(circle at 92% 24%, rgba(37, 99, 235, 0.10) 0%, transparent 32%),
+    radial-gradient(circle at 50% 90%, rgba(15, 23, 42, 0.75) 0%, #03050a 70%);
   background-attachment: fixed;
+}
+
+/* Immersive site background */
+.site-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(220, 38, 38, 0.11), transparent 26%),
+    radial-gradient(circle at 82% 35%, rgba(37, 99, 235, 0.10), transparent 28%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.32), transparent 45%, rgba(2, 6, 23, 0.55));
+}
+
+.site-background::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.055) 1px, transparent 1px);
+  background-size: 72px 72px;
+  transform: perspective(900px) rotateX(55deg) translateY(-8%);
+  transform-origin: center top;
+  animation: site-grid-drift 22s linear infinite;
+}
+
+.site-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.20) 0.7px, transparent 0.8px);
+  background-size: 110px 110px;
+  mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+  animation: site-particle-drift 18s ease-in-out infinite alternate;
+}
+
+.site-background-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.22;
+  animation: site-orb-float 12s ease-in-out infinite alternate;
+}
+
+.site-background-orb-red {
+  width: 320px;
+  height: 320px;
+  left: -100px;
+  top: 16%;
+  background: rgba(220, 38, 38, 0.28);
+}
+
+.site-background-orb-blue {
+  width: 380px;
+  height: 380px;
+  right: -140px;
+  top: 52%;
+  background: rgba(37, 99, 235, 0.24);
+  animation-delay: -5s;
+}
+
+.site-background-orb-center {
+  width: 260px;
+  height: 260px;
+  left: 42%;
+  top: 72%;
+  background: rgba(71, 85, 105, 0.14);
+  animation-delay: -8s;
 }
 
 /* Subtle Web Grid / Corner Texture */
 .bg-spider-web {
-  background-image: 
+  background-image:
     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to right, rgba(255, 255, 255, 0.01) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
@@ -73,12 +148,47 @@ body {
   color: #ffffff;
 }
 
+@keyframes site-grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 72px 72px, 72px 72px;
+  }
+}
+
+@keyframes site-particle-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(20px, -18px, 0);
+  }
+}
+
+@keyframes site-orb-float {
+  from {
+    transform: translate3d(0, -12px, 0) scale(0.96);
+  }
+  to {
+    transform: translate3d(24px, 18px, 0) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-background::before,
+  .site-background::after,
+  .site-background-orb {
+    animation: none;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #04060a;
+  background: #03050a;
 }
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
