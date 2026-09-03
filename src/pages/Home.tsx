@@ -16,7 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import heroImg from '../assets/output.png';
-import eventPoster from '../assets/itekron-poster.svg';
+import eventPoster from '../assets/itekron-poster.png';
 
 const registrationSteps = [
   { number: '01', title: 'Create your account', description: 'Sign up with your email and verify your account before registering for an event.', icon: UserPlus },
