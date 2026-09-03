@@ -67,32 +67,76 @@ export const About: React.FC = () => {
 
   const teamByCategory = (category: string) => organizingTeam.filter((member) => member.category === category);
 
-  const teamCard = (member: (typeof organizingTeam)[number], featured = false) => (
-    <div
-      className={`spider-card rounded-2xl border p-5 sm:p-6 text-center transition-all duration-300 ease-in-out hover:-translate-y-1.5 hover:shadow-2xl ${
-        member.category === 'HEAD'
-          ? 'border-red-800 shadow-lg shadow-red-950/40 hover:border-red-500 hover:shadow-red-900/50'
-          : member.category === 'STAFF'
-            ? 'border-blue-900/60 hover:border-blue-500 hover:shadow-blue-900/30'
-            : 'border-slate-800 hover:border-slate-700 hover:bg-slate-950/80'
-      } ${featured ? 'min-w-[230px] sm:min-w-[260px]' : ''}`}
-    >
-      <span
-        className={`text-[10px] font-extrabold uppercase tracking-[0.16em] block leading-tight ${
-          member.category === 'HEAD'
-            ? 'text-red-400'
-            : member.category === 'STAFF'
-              ? 'text-blue-400'
-              : 'text-slate-500'
-        }`}
+  const teamCard = (member: (typeof organizingTeam)[number], featured = false) => {
+    const initials = member.name
+      .replace(/^(Dr\\. |Ms\\. )/, '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase();
+
+    const accent =
+      member.category === 'HEAD'
+        ? {
+            border: 'border-red-800/80 hover:border-red-500',
+            glow: 'bg-red-500/15',
+            text: 'text-red-400',
+            ring: 'border-red-500/30',
+            avatar: 'from-red-500/30 via-red-950 to-slate-950',
+            dot: 'bg-red-500',
+          }
+        : member.category === 'STAFF'
+          ? {
+              border: 'border-blue-900/70 hover:border-blue-500',
+              glow: 'bg-blue-500/15',
+              text: 'text-blue-400',
+              ring: 'border-blue-500/30',
+              avatar: 'from-blue-500/30 via-blue-950 to-slate-950',
+              dot: 'bg-blue-500',
+            }
+          : {
+              border: 'border-slate-800 hover:border-slate-600',
+              glow: 'bg-slate-400/10',
+              text: 'text-slate-400',
+              ring: 'border-slate-500/25',
+              avatar: 'from-slate-500/25 via-slate-900 to-slate-950',
+              dot: 'bg-slate-400',
+            };
+
+    return (
+      <div
+        className={`group relative overflow-hidden spider-card rounded-2xl border p-5 sm:p-6 text-center transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-2xl ${accent.border} ${featured ? 'min-w-[230px] sm:min-w-[260px]' : ''}`}
       >
-        {member.role}
-      </span>
-      <span className="mt-2 text-base sm:text-lg font-black text-white block leading-tight">
-        {member.name}
-      </span>
-    </div>
-  );
+        <div className={`absolute -top-20 -right-16 h-40 w-40 rounded-full blur-3xl opacity-40 transition-all duration-500 group-hover:scale-150 group-hover:opacity-70 ${accent.glow}`} />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="relative mb-4">
+            <div className={`absolute inset-0 rounded-full border ${accent.ring} animate-pulse`} />
+            <div className={`relative flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br ${accent.avatar} shadow-xl transition-transform duration-500 group-hover:scale-110`}>
+              <span className={`text-lg font-black tracking-wider ${accent.text}`}>{initials}</span>
+            </div>
+            <span className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-slate-950 ${accent.dot} shadow-lg`} />
+          </div>
+
+          <span className={`text-[10px] font-extrabold uppercase tracking-[0.16em] block leading-tight ${accent.text}`}>
+            {member.role}
+          </span>
+          <span className="mt-2 text-base sm:text-lg font-black text-white block leading-tight transition-colors duration-300 group-hover:text-slate-100">
+            {member.name}
+          </span>
+
+          <div className="mt-5 flex items-center gap-1.5 opacity-50 transition-all duration-300 group-hover:opacity-100">
+            <span className={`h-1 w-1 rounded-full ${accent.dot}`} />
+            <span className={`h-px w-8 ${accent.dot}`} />
+            <span className={`h-1 w-1 rounded-full ${accent.dot}`} />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen pt-24 pb-20 space-y-20 sm:space-y-24">
