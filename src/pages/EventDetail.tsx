@@ -101,7 +101,6 @@ export const EventDetail: React.FC = () => {
   const normalizedCategory = String(event.category || '').trim().toLowerCase();
   const isTechnical = normalizedCategory === 'technical';
   const isConvera = String(event.id || '').toUpperCase() === 'CONVERA01';
-  const accent = isTechnical ? 'red' : 'blue';
   const displayPrice = isConvera ? '₹150' : isTechnical ? '₹50' : 'FREE';
   const eventType = event.event_type || event.type || event.team_type || 'Individual';
   const teamSize = event.max_team_size || event.team_size || 'Individual Participation';
@@ -123,6 +122,9 @@ export const EventDetail: React.FC = () => {
         text: 'text-blue-400',
         border: 'border-blue-900/40',
       };
+
+  // Normalize literal escaped newlines from database content into real line breaks.
+  const formattedRules = String(event.rules_regulations || '').replace(/\\n/g, '\n');
 
   return (
     <div className="relative min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-white">
@@ -277,7 +279,7 @@ export const EventDetail: React.FC = () => {
               </div>
             </div>
             <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 sm:p-6 text-sm leading-7 text-slate-400 whitespace-pre-line">
-              {event.rules_regulations}
+              {formattedRules}
             </div>
           </div>
         </section>
@@ -292,27 +294,19 @@ export const EventDetail: React.FC = () => {
           <p className="mt-2 text-sm text-slate-500">Register now and get ready for ITEKRON 2K26.</p>
           <button
             onClick={handleRegisterClick}
-            className={`group mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-black transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${accentClasses.button}`}
+            className={`group mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-black text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${accentClasses.button}`}
           >
-            Register for {event.name}
-            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+            Register Now
+            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
           </button>
         </div>
       </section>
 
-      {/* Registration modal */}
       {isRegisterModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm overflow-y-auto px-4 py-10">
-          <div className="relative max-w-2xl mx-auto">
-            <button
-              onClick={() => setIsRegisterModalOpen(false)}
-              className="absolute -top-1 right-3 sm:right-0 z-20 rounded-full border border-slate-700 bg-slate-950/90 px-3 py-2 text-xs font-bold text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
-            >
-              ✕ Close
-            </button>
-            <RegisterEvent event={event} onClose={() => setIsRegisterModalOpen(false)} />
-          </div>
-        </div>
+        <RegisterEvent
+          event={event}
+          onClose={() => setIsRegisterModalOpen(false)}
+        />
       )}
     </div>
   );
