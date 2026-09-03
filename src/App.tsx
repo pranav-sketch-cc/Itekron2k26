@@ -23,14 +23,22 @@ const AppLayout: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   return (
-    <div className="flex flex-col min-h-screen bg-slate-950 text-white">
-      <Navbar />
+    <div className="relative flex min-h-screen flex-col bg-transparent text-white">
+      <div className="site-background" aria-hidden="true">
+        <div className="site-background-orb site-background-orb-red" />
+        <div className="site-background-orb site-background-orb-blue" />
+        <div className="site-background-orb site-background-orb-center" />
+      </div>
 
-      <main className="flex-grow">
-        {children}
-      </main>
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <Navbar />
 
-      <Footer />
+        <main className="flex-grow">
+          {children}
+        </main>
+
+        <Footer />
+      </div>
     </div>
   );
 };
@@ -39,100 +47,47 @@ export function App() {
   return (
     <AppLayout>
       <Switch>
-
         {/* =========================
             PUBLIC PAGES
         ========================== */}
 
-        <Route
-          path="/"
-          component={Home}
-        />
-
-        <Route
-          path="/about"
-          component={About}
-        />
-
-        <Route
-          path="/events"
-          component={Events}
-        />
-
-        <Route
-          path="/events/:id"
-          component={EventDetail}
-        />
-
+        <Route path="/" component={Home} />
+        <Route path="/about" component={About} />
+        <Route path="/events" component={Events} />
+        <Route path="/events/:id" component={EventDetail} />
         <Route
           path="/events/:id/register"
           component={RegisterEvent as React.ComponentType}
         />
-
-        <Route
-          path="/schedule"
-          component={Schedule}
-        />
-
-        <Route
-          path="/sponsors"
-          component={Sponsors}
-        />
-
+        <Route path="/schedule" component={Schedule} />
+        <Route path="/sponsors" component={Sponsors} />
 
         {/* =========================
             PARTICIPANT AUTH
-        ========================== */}
+        ========================== */
 
-        <Route
-          path="/login"
-          component={Login}
-        />
-
-        <Route
-          path="/signup"
-          component={SignUp}
-        />
-
+        <Route path="/login" component={Login} />
+        <Route path="/signup" component={SignUp} />
 
         {/* =========================
             PARTICIPANT REGISTRATIONS
-        ========================== */}
+        ========================== */
 
-        <Route
-          path="/my-registrations"
-          component={MyRegistrations}
-        />
-
-        <Route
-          path="/pass/:id"
-          component={DigitalPass}
-        />
-
+        <Route path="/my-registrations" component={MyRegistrations} />
+        <Route path="/pass/:id" component={DigitalPass} />
 
         {/* =========================
             ORGANIZER PORTAL
-        ========================== */}
+        ========================== */
 
-        <Route
-          path="/organizer/login"
-          component={OrganizerLogin}
-        />
-
-        <Route
-          path="/organizer"
-          component={OrganizerDashboard}
-        />
-
+        <Route path="/organizer/login" component={OrganizerLogin} />
+        <Route path="/organizer" component={OrganizerDashboard} />
 
         {/* =========================
             FALLBACK
         ========================== */}
 
-        <Route
-          component={Home}
-        />
-
+        <Route component={Home} />
       </Switch>
     </AppLayout>
   );
