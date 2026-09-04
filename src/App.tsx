@@ -58,6 +58,7 @@ export function App() {
         <Route path="/pass/:id" component={DigitalPass} />
 
         <Route path="/organizer/login" component={OrganizerLogin} />
+        <Route path="/organizer/scanner" component={OrganizerDashboard} />
         <Route path="/organizer" component={OrganizerDashboard} />
 
         <Route component={Home} />
