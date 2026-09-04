@@ -148,6 +148,154 @@ body {
   color: #ffffff;
 }
 
+/* About page scroll storytelling */
+@keyframes page-scroll-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 54px, 0) scale(0.985);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes team-card-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 34px, 0) rotateX(7deg) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(0) scale(1);
+  }
+}
+
+@keyframes events-card-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 70px, 0) rotateX(8deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(0) scale(1);
+  }
+}
+
+@keyframes events-hero-float {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  to {
+    transform: translateY(-14px) scale(0.985);
+  }
+}
+
+@keyframes filter-pulse-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Native scroll-driven animation where supported */
+@supports (animation-timeline: view()) {
+  /* About: every major section enters like a cinematic chapter. */
+  main > div:has(#team) > section {
+    animation: page-scroll-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 8% cover 30%;
+  }
+
+  /* About: organizing cards rise in sequence as the hierarchy enters. */
+  #team .spider-card {
+    animation: team-card-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 4% cover 28%;
+    transform-origin: center bottom;
+  }
+
+  #team .spider-card:nth-child(2) {
+    animation-range: entry 10% cover 34%;
+  }
+
+  #team .spider-card:nth-child(3) {
+    animation-range: entry 16% cover 40%;
+  }
+
+  /* Events: heading subtly zooms away while the cards approach. */
+  .events-page .events-hero {
+    animation: events-hero-float linear both;
+    animation-timeline: view();
+    animation-range: exit -5% cover 45%;
+    transform-origin: center top;
+  }
+
+  .events-page .events-filters {
+    animation: filter-pulse-in linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 30%;
+  }
+
+  .events-page .event-scroll-card {
+    animation: events-card-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 2% cover 30%;
+    transform-origin: center bottom;
+    will-change: transform, opacity;
+  }
+}
+
+/* Hover depth for the event showcase */
+.events-page .event-scroll-card {
+  transform-style: preserve-3d;
+  perspective: 900px;
+}
+
+.events-page .event-scroll-card:hover {
+  transform: translateY(-8px) rotateX(1.5deg) rotateY(-1.5deg) scale(1.01);
+}
+
+.events-page .events-filters button {
+  position: relative;
+}
+
+.events-page .events-filters button::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(120deg, transparent 25%, rgba(255, 255, 255, 0.12) 50%, transparent 75%);
+  transform: translateX(-130%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.events-page .events-filters button:hover::after {
+  transform: translateX(130%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-background::before,
+  .site-background::after,
+  .site-background-orb,
+  main > div:has(#team) > section,
+  #team .spider-card,
+  .events-page .events-hero,
+  .events-page .events-filters,
+  .events-page .event-scroll-card {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
 @keyframes site-grid-drift {
   from {
     background-position: 0 0, 0 0;
@@ -172,14 +320,6 @@ body {
   }
   to {
     transform: translate3d(24px, 18px, 0) scale(1.06);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .site-background::before,
-  .site-background::after,
-  .site-background-orb {
-    animation: none;
   }
 }
 
