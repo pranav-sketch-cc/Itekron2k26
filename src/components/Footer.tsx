@@ -44,7 +44,6 @@ export const Footer: React.FC = () => {
                   { label: 'Participant Log In', href: '/login' },
                   { label: 'Organizer Portal Desk', href: '/organizer/login' },
                   { label: 'System Check-In Scanner', href: '/organizer/scanner' },
-                  { label: 'Admin Dashboard Hub', href: '/admin/login' },
                 ].map((link, idx) => <li key={idx}><Link href={link.href} className="hover:text-blue-400 transition font-medium">{link.label}</Link></li>)}
               </ul>
             </div>
