@@ -46,7 +46,7 @@ export const Events: React.FC = () => {
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
+    <div className="events-page relative min-h-screen overflow-hidden pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
       {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute left-[8%] top-24 h-72 w-72 rounded-full bg-red-600/10 blur-3xl animate-pulse" />
@@ -55,7 +55,7 @@ export const Events: React.FC = () => {
       </div>
 
       {/* Header */}
-      <div className="relative text-center max-w-3xl mx-auto space-y-4">
+      <div className="events-hero relative text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 text-[10px] font-bold text-red-400 uppercase tracking-[0.2em] bg-red-950/40 px-3.5 py-1.5 rounded-full border border-red-900/40 shadow-lg shadow-red-950/20">
           <Sparkles className="w-3 h-3" />
           ITEKRON 2K26 Events
@@ -71,7 +71,7 @@ export const Events: React.FC = () => {
 
       {/* Category Filter Pills */}
       {categories.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="events-filters flex flex-wrap justify-center gap-3">
           {categories.map((cat) => {
             const active = selectedCategory.trim().toLowerCase() === cat.trim().toLowerCase();
             const isTechnical = cat.trim().toLowerCase() === 'technical';
@@ -105,7 +105,7 @@ export const Events: React.FC = () => {
           No events available in this category.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="events-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event, index) => {
             const rawType = (event.event_type || event.team_type || '').toLowerCase();
             const numericTeamSize = Number(event.max_team_size || event.team_size || 1);
@@ -127,7 +127,7 @@ export const Events: React.FC = () => {
             return (
               <div
                 key={event.id}
-                className="group relative overflow-hidden spider-card rounded-3xl border border-slate-800/80 p-6 flex flex-col justify-between space-y-5 transition-all duration-500 ease-out hover:-translate-y-2 hover:border-slate-600 hover:shadow-2xl"
+                className="event-scroll-card group relative overflow-hidden spider-card rounded-3xl border border-slate-800/80 p-6 flex flex-col justify-between space-y-5 transition-all duration-500 ease-out hover:-translate-y-2 hover:border-slate-600 hover:shadow-2xl"
                 style={{ animationDelay: `${index * 80}ms` }}
               >
                 <div className={`pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full blur-3xl opacity-0 transition-all duration-500 group-hover:opacity-100 ${accent === 'red' ? 'bg-red-500/20' : 'bg-blue-500/20'}`} />
