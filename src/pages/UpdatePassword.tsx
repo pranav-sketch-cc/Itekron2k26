@@ -136,6 +136,13 @@ export const UpdatePassword: React.FC = () => {
               Your new password is active. You can now sign in with your updated
               credentials.
             </p>
+            <button
+              type="button"
+              onClick={() => setLocation('/login')}
+              className="mt-5 text-red-400 text-xs font-bold hover:underline"
+            >
+              Return to Login
+            </button>
           </div>
         ) : (
           <>
