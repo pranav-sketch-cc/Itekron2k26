@@ -13,6 +13,8 @@ import Schedule from './pages/Schedule';
 import Sponsors from './pages/Sponsors';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import ForgotPassword from './pages/ForgotPassword';
+import UpdatePassword from './pages/UpdatePassword';
 import { MyRegistrations } from './pages/MyRegistrations';
 import DigitalPass from './pages/DigitalPass';
 import OrganizerLogin from './pages/OrganizerLogin';
@@ -53,6 +55,8 @@ export function App() {
 
         <Route path="/login" component={Login} />
         <Route path="/signup" component={SignUp} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/update-password" component={UpdatePassword} />
 
         <Route path="/my-registrations" component={MyRegistrations} />
         <Route path="/pass/:id" component={DigitalPass} />
