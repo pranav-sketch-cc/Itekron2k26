@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { KeyRound, LockKeyhole } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'wouter';
 
@@ -17,7 +18,6 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Safely access whatever authentication function exists in AuthContext
       const loginFn = auth.signInWithPassword || auth.signIn || auth.login;
 
       if (typeof loginFn !== 'function') {
@@ -43,9 +43,7 @@ export const Login: React.FC = () => {
       <div className="spider-card max-w-md w-full p-8 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-md">
         <div className="text-center mb-8">
           <div className="inline-flex p-3 rounded-full bg-red-950/50 border border-red-800 text-red-500 mb-4">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 002-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+            <LockKeyhole className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold text-white">Participant Login</h1>
           <p className="text-slate-400 text-xs mt-2">Enter your credentials to access registrations and pass details.</p>
@@ -66,6 +64,7 @@ export const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-600 transition-colors"
               placeholder="you@example.com"
             />
@@ -78,9 +77,21 @@ export const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-red-600 transition-colors"
               placeholder="••••••••"
             />
+          </div>
+
+          <div className="flex justify-end -mt-2">
+            <button
+              type="button"
+              onClick={() => setLocation('/forgot-password')}
+              className="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 hover:underline transition-colors"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              Forgot Password?
+            </button>
           </div>
 
           <button
@@ -93,7 +104,7 @@ export const Login: React.FC = () => {
         </form>
 
         <p className="text-center text-xs text-slate-400 mt-6">
-          Don't have an account yet?{' '}
+          Don&apos;t have an account yet?{' '}
           <button onClick={() => setLocation('/signup')} className="text-red-400 font-bold hover:underline">
             Register Here
           </button>
