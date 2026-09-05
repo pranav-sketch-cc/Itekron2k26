@@ -79,13 +79,6 @@ export const ForgotPassword: React.FC = () => {
               for the password reset link. Please check Spam or Junk if you
               don&apos;t see it in your inbox.
             </p>
-            <button
-              type="button"
-              onClick={() => setLocation('/login')}
-              className="mt-5 text-red-400 text-xs font-bold hover:underline"
-            >
-              Return to Login
-            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
