@@ -105,6 +105,25 @@ export const EventDetail: React.FC = () => {
   const eventType = event.event_type || event.type || event.team_type || 'Individual';
   const teamSize = event.max_team_size || event.team_size || 'Individual Participation';
 
+  const formatEventDateTime = (value: string | null | undefined) => {
+    if (!value) return 'TBA';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return new Intl.DateTimeFormat('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata',
+    }).format(date);
+  };
+
+  const formattedEventDateTime = formatEventDateTime(event.date_time);
+
   const accentClasses = isTechnical
     ? {
         badge: 'bg-red-950/70 border-red-900/60 text-red-400',
@@ -188,7 +207,7 @@ export const EventDetail: React.FC = () => {
       {/* Event facts */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
         {[
-          { label: 'Date', value: event.date_time || 'TBA', icon: Calendar },
+          { label: 'Date', value: formattedEventDateTime, icon: Calendar },
           { label: 'Venue', value: event.venue || 'Campus', icon: MapPin },
           { label: 'Participation', value: eventType, icon: Users },
           { label: 'Entry Fee', value: displayPrice, icon: CheckCircle2 },
@@ -253,7 +272,7 @@ export const EventDetail: React.FC = () => {
           <div className="space-y-4 text-sm">
             <div>
               <p className="text-[9px] uppercase tracking-[0.16em] text-slate-600">Date & Time</p>
-              <p className="mt-1 font-bold text-slate-200">{event.date_time || 'TBA'}</p>
+              <p className="mt-1 font-bold text-slate-200">{formattedEventDateTime}</p>
             </div>
             <div className="h-px bg-slate-800/80" />
             <div>
