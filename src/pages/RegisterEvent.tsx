@@ -56,6 +56,25 @@ const loadRazorpayScript = (): Promise<boolean> => {
   });
 };
 
+const THREE_MEMBER_TEAM_EVENT_IDS = [
+  'DREADENCRYPTA01',
+  'MINDMOSAIC01',
+];
+
+const isThreeMemberTeamEvent = (event: any) =>
+  THREE_MEMBER_TEAM_EVENT_IDS.includes(
+    String(event?.id || '').trim().toUpperCase()
+  );
+
+const createEmptyTeamMember = (): TeamMember => ({
+  name: '',
+  email: '',
+  phone: '',
+  department: '',
+  year: '1',
+  foodPreference: 'Vegetarian',
+});
+
 export const RegisterEvent: React.FC<RegisterEventProps> = ({
   event: initialEvent,
   onClose,
@@ -85,14 +104,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
   });
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      name: '',
-      email: '',
-      phone: '',
-      department: '',
-      year: '1',
-      foodPreference: 'Vegetarian',
-    },
+    createEmptyTeamMember(),
   ]);
 
   useEffect(() => {
@@ -156,6 +168,28 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     }));
   }, [user]);
 
+  useEffect(() => {
+    if (!event || String(event.team_type || '').toLowerCase() !== 'team') {
+      return;
+    }
+
+    if (isThreeMemberTeamEvent(event)) {
+      setTeamMembers((previous) => {
+        if (previous.length >= 2) {
+          return previous;
+        }
+
+        return [
+          ...previous,
+          ...Array.from(
+            { length: 2 - previous.length },
+            createEmptyTeamMember
+          ),
+        ];
+      });
+    }
+  }, [event]);
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement
@@ -187,17 +221,15 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
   };
 
   const addTeamMember = () => {
-    setTeamMembers((previous) => [
-      ...previous,
-      {
-        name: '',
-        email: '',
-        phone: '',
-        department: '',
-        year: '1',
-        foodPreference: 'Vegetarian',
-      },
-    ]);
+    const memberLimit = isThreeMemberTeamEvent(event) ? 2 : Infinity;
+
+    setTeamMembers((previous) => {
+      if (previous.length >= memberLimit) {
+        return previous;
+      }
+
+      return [...previous, createEmptyTeamMember()];
+    });
   };
 
   const removeTeamMember = (index: number) => {
@@ -252,6 +284,15 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     if (isTeam) {
       if (!formData.teamName.trim()) {
         return 'Please enter your team name.';
+      }
+
+      const requiresExactlyThreeMembers = isThreeMemberTeamEvent(event);
+
+      if (
+        requiresExactlyThreeMembers &&
+        teamMembers.length !== 2
+      ) {
+        return 'This event requires exactly 3 team members in total, including the team leader.';
       }
 
       if (teamMembers.length === 0) {
@@ -338,18 +379,6 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     let registrationUUID: string | null = null;
 
     try {
-      /*
-       * -------------------------------------------------------
-       * 1. Check existing registration
-       * -------------------------------------------------------
-       *
-       * IMPORTANT:
-       * Do NOT use maybeSingle() directly here.
-       *
-       * Old test attempts may have created multiple rows for
-       * the same user + event. We intentionally fetch the
-       * newest row only.
-       */
       const {
         data: existingRegistrations,
         error: existingRegistrationError,
@@ -380,15 +409,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           ? existingRegistrations[0]
           : null;
 
-      /*
-       * -------------------------------------------------------
-       * 2. Handle existing registration
-       * -------------------------------------------------------
-       */
       if (existingRegistration) {
-        /*
-         * Payment is already completed.
-         */
         if (
           existingRegistration.payment_status === 'paid' ||
           existingRegistration.status === 'confirmed'
@@ -398,18 +419,8 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           );
         }
 
-        /*
-         * Existing pending registration.
-         *
-         * Reuse it instead of inserting another row.
-         */
         registrationUUID = existingRegistration.id;
       } else {
-        /*
-         * -----------------------------------------------------
-         * 3. Create a new registration
-         * -----------------------------------------------------
-         */
         const {
           data: registration,
           error: regErr,
@@ -450,12 +461,6 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
         registrationUUID = registration.id;
       }
-
-      /*
-       * -------------------------------------------------------
-       * 4. Save participant/team information
-       * -------------------------------------------------------
-       */
 
       if (isTeam) {
         const {
@@ -528,9 +533,6 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           teamUUID = team.id;
         }
 
-        /*
-         * Team leader
-         */
         const {
           data: existingLeader,
           error: existingLeaderError,
@@ -597,9 +599,6 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           }
         }
 
-        /*
-         * Remove old non-leader members before recreating them.
-         */
         const {
           error: deleteMembersError,
         } = await supabase
@@ -644,9 +643,6 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           }
         }
       } else {
-        /*
-         * Individual participant
-         */
         const {
           data: existingParticipant,
           error: existingParticipantError,
@@ -719,26 +715,18 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
           }
         }
       }
-      /*
- * Non-Technical events do not require payment.
- * Registration is completed directly.
- */
-if (!requiresPayment) {
-  setSubmitting(false);
 
-  if (onClose) {
-    onClose();
-  }
+      if (!requiresPayment) {
+        setSubmitting(false);
 
-  setLocation('/my-registrations');
-  return;
-}
+        if (onClose) {
+          onClose();
+        }
 
-      /*
-       * -------------------------------------------------------
-       * 5. Load Razorpay
-       * -------------------------------------------------------
-       */
+        setLocation('/my-registrations');
+        return;
+      }
+
       const razorpayLoaded =
         await loadRazorpayScript();
 
@@ -751,11 +739,6 @@ if (!requiresPayment) {
         );
       }
 
-      /*
-       * -------------------------------------------------------
-       * 6. Create Razorpay order through backend
-       * -------------------------------------------------------
-       */
       const orderRes = await fetch(
         '/api/create-order',
         {
@@ -797,11 +780,6 @@ if (!requiresPayment) {
         );
       }
 
-      /*
-       * -------------------------------------------------------
-       * 7. Open Razorpay Checkout
-       * -------------------------------------------------------
-       */
       const options = {
         key: orderData.key_id,
         amount: orderData.amount,
@@ -841,11 +819,6 @@ if (!requiresPayment) {
           try {
             setError(null);
 
-            /*
-             * -------------------------------------------------
-             * 8. Verify payment on backend
-             * -------------------------------------------------
-             */
             const verifyRes =
               await fetch(
                 '/api/verify-payment',
@@ -899,9 +872,6 @@ if (!requiresPayment) {
               );
             }
 
-            /*
-             * Payment successfully verified.
-             */
             setSubmitting(false);
 
             if (onClose) {
@@ -1032,6 +1002,9 @@ const displayPrice = isConvera
     String(event.team_type || '')
       .toLowerCase() ===
     'team';
+
+  const requiresExactlyThreeMembers =
+    isTeam && isThreeMemberTeamEvent(event);
 
   return (
     <div className="spider-card p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-900/95 backdrop-blur-md text-white max-h-[85vh] overflow-y-auto">
@@ -1253,12 +1226,22 @@ const displayPrice = isConvera
               <button
                 type="button"
                 onClick={addTeamMember}
-                disabled={submitting}
+                disabled={
+                  submitting ||
+                  (requiresExactlyThreeMembers &&
+                    teamMembers.length >= 2)
+                }
                 className="text-xs text-red-400 font-bold hover:underline flex items-center gap-1 disabled:opacity-50"
               >
                 + Add Member
               </button>
             </div>
+
+            {requiresExactlyThreeMembers && (
+              <p className="text-[11px] text-slate-400">
+                This event requires 3 members total: 1 team leader + 2 team members.
+              </p>
+            )}
 
             {teamMembers.map(
               (member, idx) => (
