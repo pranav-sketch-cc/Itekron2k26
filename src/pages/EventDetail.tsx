@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,7 @@ export const EventDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const registrationSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!eventId) {
@@ -60,6 +61,19 @@ export const EventDetail: React.FC = () => {
 
     fetchEvent();
   }, [eventId]);
+
+  useEffect(() => {
+    if (!isRegisterModalOpen) return;
+
+    const frame = requestAnimationFrame(() => {
+      registrationSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isRegisterModalOpen]);
 
   const handleRegisterClick = () => {
     if (!user) {
@@ -322,10 +336,12 @@ export const EventDetail: React.FC = () => {
       </section>
 
       {isRegisterModalOpen && (
-        <RegisterEvent
-          event={event}
-          onClose={() => setIsRegisterModalOpen(false)}
-        />
+        <div ref={registrationSectionRef} className="scroll-mt-24 mt-8">
+          <RegisterEvent
+            event={event}
+            onClose={() => setIsRegisterModalOpen(false)}
+          />
+        </div>
       )}
     </div>
   );
