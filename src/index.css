@@ -252,6 +252,17 @@ body {
   }
 }
 
+/* Mobile browsers can leave the last view-timeline card between animation states. */
+@media (max-width: 767px) {
+  .events-page .event-scroll-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    will-change: auto;
+  }
+}
+
 /* Hover depth for the event showcase */
 .events-page .event-scroll-card {
   transform-style: preserve-3d;
