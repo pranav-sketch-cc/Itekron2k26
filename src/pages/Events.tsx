@@ -108,12 +108,14 @@ export const Events: React.FC = () => {
         <div className="events-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event, index) => {
             const rawType = (event.event_type || event.team_type || '').toLowerCase();
-            const numericTeamSize = Number(event.max_team_size || event.team_size || 1);
+            const eventName = event.name?.trim().toLowerCase() || '';
+            const isFixedThreeMemberTeam = eventName === 'dreaden crypta' || eventName === 'mind mosaic';
+            const numericTeamSize = isFixedThreeMemberTeam ? 3 : Number(event.max_team_size || event.team_size || 1);
 
             let typeLabel = 'Individual';
             if (rawType === 'both') {
               typeLabel = 'Individual & Team';
-            } else if (rawType === 'team' || numericTeamSize > 1) {
+            } else if (rawType === 'team' || numericTeamSize > 1 || isFixedThreeMemberTeam) {
               typeLabel = `Team (${numericTeamSize})`;
             } else if (rawType === 'individual') {
               typeLabel = 'Individual';
