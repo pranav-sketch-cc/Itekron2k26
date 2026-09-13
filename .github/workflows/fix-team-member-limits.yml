@@ -1,0 +1,82 @@
+name: Fix team member limits
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply event team-size limits
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('src/pages/RegisterEvent.tsx')
+          text = path.read_text()
+
+          text = text.replace("""const isThreeMemberTeamEvent = (event: any) =>\n  THREE_MEMBER_TEAM_EVENT_IDS.includes(\n    String(event?.id || '').trim().toUpperCase()\n  );\n""", """const isThreeMemberTeamEvent = (event: any) =>\n  THREE_MEMBER_TEAM_EVENT_IDS.includes(\n    String(event?.id || '').trim().toUpperCase()\n  );\n\nconst getTeamSizeBounds = (event: any) => {\n  const teamSizeText = String(event?.team_size || '').trim();\n  const numbers = teamSizeText.match(/\\d+/g)?.map(Number) || [];\n\n  if (numbers.length === 0) return null;\n\n  const minTotal = numbers[0];\n  const maxTotal = numbers.length > 1\n    ? Math.max(numbers[0], numbers[1])\n    : numbers[0];\n\n  return {\n    minTotal,\n    maxTotal,\n    minAdditionalMembers: Math.max(0, minTotal - 1),\n    maxAdditionalMembers: Math.max(0, maxTotal - 1),\n  };\n};\n""")
+
+          text = text.replace("""  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([\n    createEmptyTeamMember(),\n  ]);""", """  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);""")
+
+          old_effect = """  useEffect(() => {\n    if (!event || String(event.team_type || '').toLowerCase() !== 'team') {\n      return;\n    }\n\n    if (isThreeMemberTeamEvent(event)) {\n      setTeamMembers((previous) => {\n        if (previous.length >= 2) {\n          return previous;\n        }\n\n        return [\n          ...previous,\n          ...Array.from(\n            { length: 2 - previous.length },\n            createEmptyTeamMember\n          ),\n        ];\n      });\n    }\n  }, [event]);"""
+          new_effect = """  useEffect(() => {\n    if (!event || String(event.team_type || '').toLowerCase() !== 'team') {\n      setTeamMembers([]);\n      return;\n    }\n\n    const bounds = getTeamSizeBounds(event);\n\n    if (!bounds) {\n      setTeamMembers((previous) =>\n        previous.length > 0 ? previous : [createEmptyTeamMember()]\n      );\n      return;\n    }\n\n    setTeamMembers((previous) => {\n      const nextMembers = previous.slice(0, bounds.maxAdditionalMembers);\n\n      while (nextMembers.length < bounds.minAdditionalMembers) {\n        nextMembers.push(createEmptyTeamMember());\n      }\n\n      return nextMembers;\n    });\n  }, [event]);"""
+          if old_effect not in text:
+              raise SystemExit('team-size effect block not found')
+          text = text.replace(old_effect, new_effect)
+
+          old_add = """  const addTeamMember = () => {\n    const memberLimit = isThreeMemberTeamEvent(event) ? 2 : Infinity;\n\n    setTeamMembers((previous) => {\n      if (previous.length >= memberLimit) {\n        return previous;\n      }\n\n      return [...previous, createEmptyTeamMember()];\n    });\n  };"""
+          new_add = """  const addTeamMember = () => {\n    const bounds = getTeamSizeBounds(event);\n    const memberLimit = bounds\n      ? bounds.maxAdditionalMembers\n      : isThreeMemberTeamEvent(event)\n        ? 2\n        : Infinity;\n\n    setTeamMembers((previous) => {\n      if (previous.length >= memberLimit) return previous;\n      return [...previous, createEmptyTeamMember()];\n    });\n  };"""
+          if old_add not in text:
+              raise SystemExit('addTeamMember block not found')
+          text = text.replace(old_add, new_add)
+
+          old_remove = """  const removeTeamMember = (index: number) => {\n    setTeamMembers((previous) =>\n      previous.filter((_, memberIndex) => memberIndex !== index)\n    );\n  };"""
+          new_remove = """  const removeTeamMember = (index: number) => {\n    const bounds = getTeamSizeBounds(event);\n\n    setTeamMembers((previous) => {\n      if (bounds && previous.length <= bounds.minAdditionalMembers) {\n        return previous;\n      }\n\n      return previous.filter((_, memberIndex) => memberIndex !== index);\n    });\n  };"""
+          if old_remove not in text:
+              raise SystemExit('removeTeamMember block not found')
+          text = text.replace(old_remove, new_remove)
+
+          old_validation = """      const requiresExactlyThreeMembers = isThreeMemberTeamEvent(event);\n\n      if (\n        requiresExactlyThreeMembers &&\n        teamMembers.length !== 2\n      ) {\n        return 'This event requires exactly 3 team members in total, including the team leader.';\n      }\n\n      if (teamMembers.length === 0) {\n        return 'Please add at least one team member.';\n      }"""
+          new_validation = """      const bounds = getTeamSizeBounds(event);\n      const totalTeamMembers = 1 + teamMembers.length;\n\n      if (bounds) {\n        if (totalTeamMembers < bounds.minTotal) {\n          return `This event requires at least ${bounds.minTotal} team members in total, including the team leader.`;\n        }\n\n        if (totalTeamMembers > bounds.maxTotal) {\n          return `This event allows a maximum of ${bounds.maxTotal} team members in total, including the team leader.`;\n        }\n      } else if (isThreeMemberTeamEvent(event) && totalTeamMembers !== 3) {\n        return 'This event requires exactly 3 team members in total, including the team leader.';\n      }\n\n      if (teamMembers.length === 0 && (!bounds || bounds.minTotal > 1)) {\n        return 'Please add at least one team member.';\n      }"""
+          if old_validation not in text:
+              raise SystemExit('validation block not found')
+          text = text.replace(old_validation, new_validation)
+
+          old_constants = """  const requiresExactlyThreeMembers =\n    isTeam && isThreeMemberTeamEvent(event);"""
+          new_constants = """  const teamSizeBounds = getTeamSizeBounds(event);\n\n  const requiresExactlyThreeMembers =\n    isTeam &&\n    (teamSizeBounds?.minTotal === 3 &&\n      teamSizeBounds?.maxTotal === 3);\n\n  const teamMemberLimit =\n    teamSizeBounds?.maxAdditionalMembers ??\n    (isThreeMemberTeamEvent(event) ? 2 : Infinity);\n\n  const teamMemberMinimum =\n    teamSizeBounds?.minAdditionalMembers ??\n    (isThreeMemberTeamEvent(event) ? 2 : 1);"""
+          if old_constants not in text:
+              raise SystemExit('render constants block not found')
+          text = text.replace(old_constants, new_constants)
+
+          old_button = """                disabled={\n                  submitting ||\n                  (requiresExactlyThreeMembers &&\n                    teamMembers.length >= 2)\n                }"""
+          new_button = """                disabled={\n                  submitting ||\n                  teamMembers.length >= teamMemberLimit\n                }"""
+          if old_button not in text:
+              raise SystemExit('add button block not found')
+          text = text.replace(old_button, new_button)
+
+          old_remove_condition = """                    {teamMembers.length >\n                      1 && ("""
+          new_remove_condition = """                    {teamMembers.length >\n                      teamMemberMinimum && ("""
+          if old_remove_condition not in text:
+              raise SystemExit('remove condition block not found')
+          text = text.replace(old_remove_condition, new_remove_condition)
+
+          old_info = """            {requiresExactlyThreeMembers && (\n              <p className=\"text-[11px] text-slate-400\">\n                This event requires 3 members total: 1 team leader + 2 team members.\n              </p>\n            )}"""
+          new_info = """            {teamSizeBounds && (\n              <p className=\"text-[11px] text-slate-400\">\n                Team size: {teamSizeBounds.minTotal === teamSizeBounds.maxTotal\n                  ? `${teamSizeBounds.maxTotal} members total`\n                  : `${teamSizeBounds.minTotal}-${teamSizeBounds.maxTotal} members total`} including the team leader.\n              </p>\n            )}"""
+          if old_info in text:
+              text = text.replace(old_info, new_info)
+
+          path.write_text(text)
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/RegisterEvent.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: enforce event team size limits in registration form"
+          git push
