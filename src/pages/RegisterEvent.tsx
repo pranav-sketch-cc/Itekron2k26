@@ -66,6 +66,25 @@ const isThreeMemberTeamEvent = (event: any) =>
     String(event?.id || '').trim().toUpperCase()
   );
 
+const getTeamSizeBounds = (event: any) => {
+  const teamSizeText = String(event?.team_size || '').trim();
+  const numbers = teamSizeText.match(/\d+/g)?.map(Number) || [];
+
+  if (numbers.length === 0) return null;
+
+  const minTotal = numbers[0];
+  const maxTotal = numbers.length > 1
+    ? Math.max(numbers[0], numbers[1])
+    : numbers[0];
+
+  return {
+    minTotal,
+    maxTotal,
+    minAdditionalMembers: Math.max(0, minTotal - 1),
+    maxAdditionalMembers: Math.max(0, maxTotal - 1),
+  };
+};
+
 const createEmptyTeamMember = (): TeamMember => ({
   name: '',
   email: '',
@@ -103,9 +122,7 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
     teamName: '',
   });
 
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    createEmptyTeamMember(),
-  ]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   useEffect(() => {
     if (initialEvent) {
@@ -170,24 +187,28 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
 
   useEffect(() => {
     if (!event || String(event.team_type || '').toLowerCase() !== 'team') {
+      setTeamMembers([]);
       return;
     }
 
-    if (isThreeMemberTeamEvent(event)) {
-      setTeamMembers((previous) => {
-        if (previous.length >= 2) {
-          return previous;
-        }
+    const bounds = getTeamSizeBounds(event);
 
-        return [
-          ...previous,
-          ...Array.from(
-            { length: 2 - previous.length },
-            createEmptyTeamMember
-          ),
-        ];
-      });
+    if (!bounds) {
+      setTeamMembers((previous) =>
+        previous.length > 0 ? previous : [createEmptyTeamMember()]
+      );
+      return;
     }
+
+    setTeamMembers((previous) => {
+      const nextMembers = previous.slice(0, bounds.maxAdditionalMembers);
+
+      while (nextMembers.length < bounds.minAdditionalMembers) {
+        nextMembers.push(createEmptyTeamMember());
+      }
+
+      return nextMembers;
+    });
   }, [event]);
 
   const handleChange = (
@@ -221,21 +242,29 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
   };
 
   const addTeamMember = () => {
-    const memberLimit = isThreeMemberTeamEvent(event) ? 2 : Infinity;
+    const bounds = getTeamSizeBounds(event);
+    const memberLimit = bounds
+      ? bounds.maxAdditionalMembers
+      : isThreeMemberTeamEvent(event)
+        ? 2
+        : Infinity;
 
     setTeamMembers((previous) => {
-      if (previous.length >= memberLimit) {
-        return previous;
-      }
-
+      if (previous.length >= memberLimit) return previous;
       return [...previous, createEmptyTeamMember()];
     });
   };
 
   const removeTeamMember = (index: number) => {
-    setTeamMembers((previous) =>
-      previous.filter((_, memberIndex) => memberIndex !== index)
-    );
+    const bounds = getTeamSizeBounds(event);
+
+    setTeamMembers((previous) => {
+      if (bounds && previous.length <= bounds.minAdditionalMembers) {
+        return previous;
+      }
+
+      return previous.filter((_, memberIndex) => memberIndex !== index);
+    });
   };
 
   const handleClose = () => {
@@ -286,16 +315,22 @@ export const RegisterEvent: React.FC<RegisterEventProps> = ({
         return 'Please enter your team name.';
       }
 
-      const requiresExactlyThreeMembers = isThreeMemberTeamEvent(event);
+      const bounds = getTeamSizeBounds(event);
+      const totalTeamMembers = 1 + teamMembers.length;
 
-      if (
-        requiresExactlyThreeMembers &&
-        teamMembers.length !== 2
-      ) {
+      if (bounds) {
+        if (totalTeamMembers < bounds.minTotal) {
+          return `This event requires at least ${bounds.minTotal} team members in total, including the team leader.`;
+        }
+
+        if (totalTeamMembers > bounds.maxTotal) {
+          return `This event allows a maximum of ${bounds.maxTotal} team members in total, including the team leader.`;
+        }
+      } else if (isThreeMemberTeamEvent(event) && totalTeamMembers !== 3) {
         return 'This event requires exactly 3 team members in total, including the team leader.';
       }
 
-      if (teamMembers.length === 0) {
+      if (teamMembers.length === 0 && (!bounds || bounds.minTotal > 1)) {
         return 'Please add at least one team member.';
       }
 
@@ -1003,8 +1038,20 @@ const displayPrice = isConvera
       .toLowerCase() ===
     'team';
 
+  const teamSizeBounds = getTeamSizeBounds(event);
+
   const requiresExactlyThreeMembers =
-    isTeam && isThreeMemberTeamEvent(event);
+    isTeam &&
+    (teamSizeBounds?.minTotal === 3 &&
+      teamSizeBounds?.maxTotal === 3);
+
+  const teamMemberLimit =
+    teamSizeBounds?.maxAdditionalMembers ??
+    (isThreeMemberTeamEvent(event) ? 2 : Infinity);
+
+  const teamMemberMinimum =
+    teamSizeBounds?.minAdditionalMembers ??
+    (isThreeMemberTeamEvent(event) ? 2 : 1);
 
   return (
     <div className="spider-card p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-900/95 backdrop-blur-md text-white max-h-[85vh] overflow-y-auto">
@@ -1228,8 +1275,7 @@ const displayPrice = isConvera
                 onClick={addTeamMember}
                 disabled={
                   submitting ||
-                  (requiresExactlyThreeMembers &&
-                    teamMembers.length >= 2)
+                  teamMembers.length >= teamMemberLimit
                 }
                 className="text-xs text-red-400 font-bold hover:underline flex items-center gap-1 disabled:opacity-50"
               >
@@ -1237,9 +1283,11 @@ const displayPrice = isConvera
               </button>
             </div>
 
-            {requiresExactlyThreeMembers && (
+            {teamSizeBounds && (
               <p className="text-[11px] text-slate-400">
-                This event requires 3 members total: 1 team leader + 2 team members.
+                Team size: {teamSizeBounds.minTotal === teamSizeBounds.maxTotal
+                  ? `${teamSizeBounds.maxTotal} members total`
+                  : `${teamSizeBounds.minTotal}-${teamSizeBounds.maxTotal} members total`} including the team leader.
               </p>
             )}
 
@@ -1255,7 +1303,7 @@ const displayPrice = isConvera
                     </span>
 
                     {teamMembers.length >
-                      1 && (
+                      teamMemberMinimum && (
                       <button
                         type="button"
                         onClick={() =>
