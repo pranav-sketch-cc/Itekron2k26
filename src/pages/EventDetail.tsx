@@ -4,6 +4,16 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import RegisterEvent from './RegisterEvent';
+import cognexaPoster from '../assets/tech/Cognexa A4.png';
+import converaPoster from '../assets/tech/Convera A4.png';
+import mind2CodePoster from '../assets/tech/Mind 2 code A4.png';
+import webbugxPoster from '../assets/tech/WebbugX A4.png';
+import uxifyPoster from '../assets/tech/uxify A4.png';
+import brainvexPoster from '../assets/non-tech/BRAINVEX NON-TECHNICAL EVENT.jpg.jpeg';
+import dreadenCryptaPoster from '../assets/non-tech/DREADEN CRYPTA post (1).png';
+import hogwartsHustlesPoster from '../assets/non-tech/HOGWARTS HUSTLES post (1).png';
+import memeMastersPoster from '../assets/non-tech/MEME MASTERS post.png';
+import mindMosaicPoster from '../assets/non-tech/Mind Mosaic.png';
 import {
   ArrowLeft,
   ArrowRight,
@@ -158,6 +168,19 @@ export const EventDetail: React.FC = () => {
 
   // Normalize literal escaped newlines from database content into real line breaks.
   const formattedRules = String(event.rules_regulations || '').replace(/\\n/g, '\n');
+  const eventPoster = ({
+    COGNEXA01: cognexaPoster,
+    CONVERA01: converaPoster,
+    MIND2CODE01: mind2CodePoster,
+    WEBBUGX01: webbugxPoster,
+    UXIFY01: uxifyPoster,
+    BRAINVEX01: brainvexPoster,
+    DREADENCRYPTA01: dreadenCryptaPoster,
+    HOGWARTSHUSTLES01: hogwartsHustlesPoster,
+    MEMEMASTERS01: memeMastersPoster,
+    MINDMOSAIC01: mindMosaicPoster,
+  } as Record<string, string>)[String(event.id || '').trim().toUpperCase()];
+
 
   return (
     <div className="relative min-h-screen overflow-hidden pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-white">
@@ -217,6 +240,32 @@ export const EventDetail: React.FC = () => {
           </button>
         </div>
       </section>
+
+      {/* Event poster */}
+      {eventPoster && (
+        <section className="relative overflow-hidden mt-5 rounded-[2rem] border border-slate-800/80 bg-slate-950/70 shadow-2xl">
+          <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${accentClasses.line} to-transparent`} />
+          <div className="relative p-3 sm:p-5 lg:p-6">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.22em] text-slate-600">Official Event Poster</p>
+                <h2 className="mt-1 text-lg sm:text-xl font-black text-white">Event Poster</h2>
+              </div>
+              <span className={`rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] ${accentClasses.badge}`}>
+                {event.category || 'Event'}
+              </span>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-black/20">
+              <img
+                src={eventPoster}
+                alt={`${event.name} event poster`}
+                className="mx-auto block h-auto max-h-[820px] w-full object-contain"
+                loading="eager"
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Event facts */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
