@@ -55,6 +55,13 @@ export const Footer: React.FC = () => {
               <li className="flex items-start gap-3">
                 <Phone className="w-3.5 h-3.5 text-red-500 mt-1 flex-shrink-0" />
                 <div className="space-y-0.5">
+                  <span className="block text-slate-400 text-[10px] font-bold">Symposium Helpline</span>
+                  <a href="tel:7010438705" className="font-mono text-white hover:text-red-300 font-bold transition">70104 38705</a>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Phone className="w-3.5 h-3.5 text-red-500 mt-1 flex-shrink-0" />
+                <div className="space-y-0.5">
                   <span className="block text-slate-400 text-[10px] font-bold">Technical Support</span>
                   <a href="tel:7305719472" className="font-mono text-white hover:text-red-300 font-bold transition">7305719472</a>
                 </div>
