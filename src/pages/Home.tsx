@@ -127,9 +127,9 @@ export const Home: React.FC = () => {
               <Link href="/events" className="spider-button-primary w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-900/30">
                 <span>EXPLORE EVENTS</span><ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/signup" className="spider-button-secondary w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-1">
-                <span>REGISTER NOW</span>
-              </Link>
+              <span className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center border border-slate-700 bg-slate-900/70 text-slate-400">
+                REGISTRATION CLOSED
+              </span>
             </div>
             <div className="home-enter home-delay-4 pt-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
@@ -256,8 +256,8 @@ export const Home: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-red-950/10 via-transparent to-blue-950/10 pointer-events-none" />
           <div className="relative z-10 max-w-2xl mx-auto space-y-4">
             <h2 className="text-2xl sm:text-3xl font-black text-white">Ready to Claim Your Spot?</h2>
-            <p className="text-xs sm:text-sm text-slate-400">Register for ITEKRON 2K26, get your Digital Pass, and be ready for verification on symposium day.</p>
-            <div className="pt-2"><Link href="/signup" className="spider-button-primary px-8 py-3.5 rounded-2xl text-xs font-bold inline-flex items-center gap-2 transition-transform duration-300 hover:-translate-y-1">Register for ITEKRON 2K26 <ArrowRight className="w-4 h-4" /></Link></div>
+            <p className="text-xs sm:text-sm text-slate-400">Registration for ITEKRON 2K26 is now closed.</p>
+            <div className="pt-2"><span className="px-8 py-3.5 rounded-2xl text-xs font-bold inline-flex items-center justify-center border border-slate-700 bg-slate-900/70 text-slate-400">REGISTRATION CLOSED</span></div>
           </div>
         </div>
       </section>
