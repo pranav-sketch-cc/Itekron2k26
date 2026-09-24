@@ -346,14 +346,6 @@ export const EventDetail: React.FC<{ eventId?: string }> = ({ eventId }) => {
         </div>
       </section>
 
-      {isRegisterModalOpen && (
-        <div ref={registrationSectionRef} className="scroll-mt-24 mt-8">
-          <RegisterEvent
-            event={event}
-            onClose={() => setIsRegisterModalOpen(false)}
-          />
-        </div>
-      )}
     </div>
   );
 };
