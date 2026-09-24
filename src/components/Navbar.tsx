@@ -89,12 +89,9 @@ export const Navbar: React.FC = () => {
                 >
                   LOG IN
                 </Link>
-                <Link
-                  href="/signup"
-                  className="spider-button-primary px-5 py-2.5 rounded-xl text-xs font-bold"
-                >
-                  REGISTER
-                </Link>
+                <span className="px-5 py-2.5 rounded-xl text-xs font-bold border border-slate-700 bg-slate-900/70 text-slate-400">
+                  REGISTRATION CLOSED
+                </span>
               </div>
             )}
             
@@ -166,13 +163,9 @@ export const Navbar: React.FC = () => {
                 >
                   LOG IN
                 </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setIsOpen(false)}
-                  className="spider-button-primary py-3 text-center rounded-xl text-xs font-bold"
-                >
-                  SIGN UP
-                </Link>
+                <span className="py-3 text-center rounded-xl text-xs font-bold border border-slate-700 bg-slate-900/70 text-slate-400">
+                  REGISTRATION CLOSED
+                </span>
               </div>
             )}
             <Link
