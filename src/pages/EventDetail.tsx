@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import RegisterEvent from './RegisterEvent';
 import cognexaPoster from '../assets/tech/Cognexa A4.png';
 import converaPoster from '../assets/tech/Convera A4.png';
 import mind2CodePoster from '../assets/tech/Mind 2 code A4.png';
@@ -27,14 +25,9 @@ import {
 
 export const EventDetail: React.FC<{ eventId?: string }> = ({ eventId }) => {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
-
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const registrationSectionRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!eventId) {
       setLoading(false);
@@ -69,27 +62,6 @@ export const EventDetail: React.FC<{ eventId?: string }> = ({ eventId }) => {
 
     fetchEvent();
   }, [eventId]);
-
-  useEffect(() => {
-    if (!isRegisterModalOpen) return;
-
-    const frame = requestAnimationFrame(() => {
-      registrationSectionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [isRegisterModalOpen]);
-
-  const handleRegisterClick = () => {
-    if (!user) {
-      setLocation('/login');
-      return;
-    }
-    setIsRegisterModalOpen(true);
-  };
 
   if (loading) {
     return (
@@ -229,13 +201,9 @@ export const EventDetail: React.FC<{ eventId?: string }> = ({ eventId }) => {
             </p>
           </div>
 
-          <button
-            onClick={handleRegisterClick}
-            className={`group inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-black transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${accentClasses.button}`}
-          >
-            Register Now
-            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </button>
+          <div className={`inline-flex shrink-0 items-center justify-center rounded-2xl border px-7 py-4 text-sm font-black uppercase tracking-wider ${accentClasses.badge}`}>
+            REGISTRATION CLOSED
+          </div>
         </div>
       </section>
 
@@ -371,14 +339,10 @@ export const EventDetail: React.FC<{ eventId?: string }> = ({ eventId }) => {
         <div className="relative z-10">
           <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-600">Ready?</p>
           <h2 className="mt-2 text-2xl sm:text-3xl font-black text-white">Take your place in the arena.</h2>
-          <p className="mt-2 text-sm text-slate-500">Register now and get ready for ITEKRON 2K26.</p>
-          <button
-            onClick={handleRegisterClick}
-            className={`group mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-black text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${accentClasses.button}`}
-          >
-            Register Now
-            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </button>
+          <p className="mt-2 text-sm text-slate-500">Registration for ITEKRON 2K26 is now closed.</p>
+          <div className={`mt-6 inline-flex items-center justify-center rounded-xl border px-6 py-3 text-xs font-black uppercase tracking-wider ${accentClasses.badge}`}>
+            REGISTRATION CLOSED
+          </div>
         </div>
       </section>
 
