@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRoute, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -25,8 +25,7 @@ import {
   Users,
 } from 'lucide-react';
 
-export const EventDetail: React.FC = () => {
-  const [, params] = useRoute('/events/:id');
+export const EventDetail: React.FC<{ eventId?: string }> = ({ eventId }) => {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
 
@@ -53,7 +52,7 @@ export const EventDetail: React.FC = () => {
           .from('events')
           .select('*')
           .eq('id', eventId)
-          .single();
+          .maybeSingle();
 
         if (fetchErr || !data) {
           console.error('Supabase query error:', fetchErr);
