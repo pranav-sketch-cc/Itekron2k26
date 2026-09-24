@@ -407,9 +407,9 @@ export const About: React.FC = () => {
             <Link href="/events" className="spider-button-primary px-8 py-3.5 rounded-2xl text-xs font-bold">
               Explore Events
             </Link>
-            <Link href="/events" className="px-8 py-3.5 rounded-2xl text-xs font-bold border border-slate-700 bg-slate-900/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800 transition">
-              Register Now
-            </Link>
+            <span className="px-8 py-3.5 rounded-2xl text-xs font-bold border border-slate-700 bg-slate-900/70 text-slate-400">
+              REGISTRATION CLOSED
+            </span>
           </div>
         </div>
       </section>
