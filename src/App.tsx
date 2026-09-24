@@ -45,11 +45,13 @@ export function App() {
         <Route path="/" component={Home} />
         <Route path="/about" component={About} />
         <Route path="/events" component={Events} />
-        <Route path="/events/:id" component={EventDetail} />
         <Route
           path="/events/:id/register"
           component={RegisterEvent as React.ComponentType}
         />
+        <Route path="/events/:id">
+          {(params) => <EventDetail eventId={params.id} />}
+        </Route>
         <Route path="/schedule" component={Schedule} />
         <Route path="/sponsors" component={Sponsors} />
 
