@@ -29,7 +29,6 @@ export const EventDetail: React.FC<{ eventId?: string }> = ({ eventId }) => {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
 
-  const eventId = params?.id;
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
