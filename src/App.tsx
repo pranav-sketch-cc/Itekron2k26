@@ -8,7 +8,6 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
-import RegisterEvent from './pages/RegisterEvent';
 import Schedule from './pages/Schedule';
 import Sponsors from './pages/Sponsors';
 import Login from './pages/Login';
@@ -45,10 +44,6 @@ export function App() {
         <Route path="/" component={Home} />
         <Route path="/about" component={About} />
         <Route path="/events" component={Events} />
-        <Route
-          path="/events/:id/register"
-          component={RegisterEvent as React.ComponentType}
-        />
         <Route path="/events/:id">
           {(params) => <EventDetail eventId={params.id} />}
         </Route>
